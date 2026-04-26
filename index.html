@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TNSED MCQ Portal | WWW.TNCLASSROOM.COM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+      window.MathJax = {
+        tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }
+      };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        .option-selected { background-color: #bbf7d0 !important; border-color: #22c55e !important; }
+        .glass-nav { background: rgba(30, 58, 138, 0.9); backdrop-filter: blur(10px); }
+        body { -webkit-tap-highlight-color: transparent; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans antialiased min-h-screen">
+
+    <div class="w-full py-2 bg-white text-center border-b border-gray-200 sticky top-0 z-50">
+        <span class="text-[#1e3a8a] font-black text-xs tracking-widest uppercase">www.tnclassroom.com</span>
+    </div>
+
+    <div id="section-reg" class="flex items-center justify-center min-h-[90vh] p-4">
+        <div class="w-full max-w-md bg-white rounded-[2.5rem] p-8 shadow-2xl border-t-4 border-[#1e3a8a]">
+            <h2 class="text-2xl font-black text-[#1e3a8a] text-center mb-6 uppercase tracking-tighter">Student Login</h2>
+            <div class="space-y-4">
+                <input type="text" id="userName" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:border-[#1e3a8a]" placeholder="Full Name">
+                <input type="tel" id="userMobile" maxlength="10" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:border-[#1e3a8a]" placeholder="Mobile Number">
+                <select id="userDistrict" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none appearance-none cursor-pointer">
+                    <option value="">Select District</option>
+                </select>
+                <button onclick="startQuiz()" class="w-full bg-[#1e3a8a] text-white py-4 rounded-2xl font-bold shadow-lg transform active:scale-95 transition-all">ENTER QUIZ</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="section-quiz" class="hidden min-h-screen bg-[#1e3a8a] p-4 pb-32 flex flex-col items-center">
+        <div class="w-full max-w-md text-white mb-6 pt-4">
+            <div class="flex justify-between items-center mb-2">
+                <span id="progress-text" class="text-xs font-black opacity-80 uppercase">Loading...</span>
+                <span class="text-[10px] px-3 py-1 bg-cyan-400/20 text-cyan-300 rounded-full font-bold uppercase tracking-widest">Assessment</span>
+            </div>
+            <div class="w-full bg-blue-900/50 h-2 rounded-full overflow-hidden">
+                <div id="progress-bar" class="bg-cyan-400 h-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div class="w-full max-w-md bg-[#e0f2fe] rounded-[3rem] p-8 shadow-2xl relative">
+            <div id="img-container" class="hidden mb-6 rounded-3xl overflow-hidden border-4 border-white shadow-md bg-white">
+                <img id="q-image" src="" class="w-full h-44 object-contain">
+            </div>
+            <h2 id="q-text" class="text-lg font-bold text-gray-800 text-center mb-8 leading-tight min-h-[60px]"></h2>
+            <div id="options-list" class="space-y-3"></div>
+        </div>
+
+        <div class="fixed bottom-0 left-0 right-0 p-4 flex justify-center z-40">
+            <div class="w-full max-w-md glass-nav rounded-[2rem] p-3 flex justify-between gap-3 shadow-2xl">
+                <button onclick="prevQuestion()" class="flex-1 py-4 bg-white/10 text-white rounded-2xl font-bold border border-white/10 active:bg-white/20">PREV</button>
+                <button id="btn-main" onclick="nextOrPreview()" class="flex-[2] py-4 bg-cyan-400 text-[#1e3a8a] rounded-2xl font-black shadow-lg uppercase tracking-tight">NEXT QUESTION</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="preview-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1e3a8a]/95 backdrop-blur-sm">
+        <div class="w-full max-w-md bg-white rounded-[2.5rem] p-8 h-[80vh] flex flex-col shadow-2xl">
+            <h2 class="text-xl font-black text-[#1e3a8a] mb-4 uppercase">Review Answers</h2>
+            <div id="preview-content" class="flex-grow overflow-y-auto space-y-4 mb-6 pr-2"></div>
+            <div class="flex gap-3">
+                <button onclick="closePreview()" class="flex-1 py-4 border-2 border-gray-100 rounded-2xl font-bold text-gray-400">EDIT</button>
+                <button onclick="goToFeedback()" class="flex-[2] py-4 bg-green-500 text-white rounded-2xl font-black shadow-lg">SUBMIT NOW</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="section-feedback" class="hidden flex items-center justify-center min-h-[90vh] p-4">
+        <div class="w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-2xl text-center">
+            <h2 class="text-2xl font-black text-gray-800 mb-6 uppercase">Feedback</h2>
+            <textarea id="feedbackText" class="w-full p-5 bg-gray-50 border rounded-3xl h-32 mb-6 focus:border-[#1e3a8a] outline-none" placeholder="Any suggestions?"></textarea>
+            <button onclick="finalFinish()" class="w-full bg-[#1e3a8a] text-white py-5 rounded-3xl font-black uppercase tracking-widest shadow-xl active:scale-95 transition">Submit Results</button>
+        </div>
+    </div>
+
+    <div id="section-success" class="hidden flex items-center justify-center min-h-[90vh] p-4">
+        <div class="w-full max-w-md bg-white rounded-[3rem] p-10 shadow-2xl text-center">
+            <div class="inline-block p-6 rounded-full bg-green-50 mb-6">
+                <span id="display-score" class="text-5xl font-black text-green-600">0/0</span>
+                <p class="text-[10px] font-bold text-green-700 uppercase tracking-widest mt-2 font-black">Your Score</p>
+            </div>
+            <h2 class="text-2xl font-black text-gray-800 mb-2">COMPLETED!</h2>
+            <p id="performance-msg" class="text-sm text-gray-500 font-medium mb-10 px-4"></p>
+            <div class="bg-gray-50 rounded-2xl p-4 mb-8 text-left border border-gray-100">
+                <p id="success-name" class="text-sm font-bold text-gray-700"></p>
+                <p id="success-mobile" class="text-[10px] text-gray-400 font-bold"></p>
+            </div>
+            <button onclick="location.reload()" class="w-full bg-[#1e3a8a] text-white py-5 rounded-3xl font-black uppercase tracking-widest shadow-lg">Close Portal</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBW92t7GWAf6vIHdJ83n7Nz7Io3y2GArVw",
+            authDomain: "tnclassroom-mcq-new.firebaseapp.com",
+            projectId: "tnclassroom-mcq-new",
+            storageBucket: "tnclassroom-mcq-new.firebasestorage.app",
+            messagingSenderId: "808928665241",
+            appId: "1:808928665241:web:5a8a9e3f4ee5b885c9a208",
+            measurementId: "G-L059C061EY"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Export to Window for global access
+        window.db = db;
+        window.collection = collection;
+        window.getDocs = getDocs;
+        window.addDoc = addDoc;
+        window.query = query;
+        window.orderBy = orderBy;
+    </script>
+
+    <script>
+        const tnDistricts = ["Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kancheepuram", "Kanniyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivagangai", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"];
+        
+        let questions = [];
+        let currentIdx = 0;
+        let answers = [];
+
+        // Initialize District List
+        const distSelect = document.getElementById('userDistrict');
+        tnDistricts.forEach(d => distSelect.add(new Option(d, d)));
+
+        async function startQuiz() {
+            const name = document.getElementById('userName').value.trim();
+            const mobile = document.getElementById('userMobile').value.trim();
+            const district = document.getElementById('userDistrict').value;
+
+            if(!name || mobile.length !== 10 || !district) return alert("Fill all details correctly.");
+
+            try {
+                // Get Quiz ID from URL (?id=SSLC_MATHS_2026)
+                const urlParams = new URLSearchParams(window.location.search);
+                const quizId = urlParams.get('id') || "SSLC_MATHS_2026"; 
+
+                const qRef = window.collection(window.db, "quizzes", quizId, "questions");
+                const qQuery = window.query(qRef, window.orderBy("qno"));
+                const querySnapshot = await window.getDocs(qQuery);
+                
+                questions = querySnapshot.docs.map(doc => doc.data());
+                if(questions.length === 0) return alert("No questions found for ID: " + quizId);
+
+                answers = new Array(questions.length).fill(null);
+                document.getElementById('section-reg').classList.add('hidden');
+                document.getElementById('section-quiz').classList.remove('hidden');
+                showQuestion();
+            } catch (e) {
+                alert("Database Error. Check your internet connection.");
+            }
+        }
+
+        function showQuestion() {
+            const q = questions[currentIdx];
+            document.getElementById('progress-text').innerText = `Question ${currentIdx + 1}/${questions.length}`;
+            document.getElementById('progress-bar').style.width = `${((currentIdx + 1) / questions.length) * 100}%`;
+            document.getElementById('q-text').innerHTML = q.question;
+            
+            const qImg = document.getElementById('q-image');
+            const imgCont = document.getElementById('img-container');
+            if(q.imageUrl && q.imageUrl.trim() !== "") {
+                qImg.src = q.imageUrl;
+                imgCont.classList.remove('hidden');
+            } else {
+                imgCont.classList.add('hidden');
+            }
+
+            const list = document.getElementById('options-list');
+            list.innerHTML = '';
+            const labels = ['A', 'B', 'C', 'D'];
+            q.options.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = `w-full p-4 flex items-center bg-white border-2 rounded-2xl transition-all text-left group ${answers[currentIdx] === i ? 'option-selected border-green-500' : 'border-transparent'}`;
+                btn.innerHTML = `<span class="w-8 h-8 flex items-center justify-center bg-[#1e3a8a] text-white rounded-full text-[10px] font-black mr-4">${labels[i]}</span><span class="flex-grow font-bold text-gray-700">${opt}</span><span class="text-green-600 font-bold ml-2 ${answers[currentIdx] === i ? '' : 'hidden'}">✓</span>`;
+                btn.onclick = () => {
+                    document.querySelectorAll('#options-list button').forEach(b => b.classList.remove('option-selected', 'border-green-500'));
+                    btn.classList.add('option-selected', 'border-green-500');
+                    answers[currentIdx] = i;
+                };
+                list.appendChild(btn);
+            });
+
+            document.getElementById('btn-main').innerText = (currentIdx === questions.length - 1) ? "PREVIEW" : "NEXT QUESTION";
+            if (window.MathJax) MathJax.typesetPromise();
+        }
+
+        function nextOrPreview() {
+            if(answers[currentIdx] === null) return alert("Please select an answer");
+            if(currentIdx < questions.length - 1) { currentIdx++; showQuestion(); } 
+            else { showPreview(); }
+        }
+
+        function prevQuestion() { if(currentIdx > 0) { currentIdx--; showQuestion(); } }
+
+        function showPreview() {
+            const cont = document.getElementById('preview-content');
+            cont.innerHTML = '';
+            questions.forEach((q, i) => {
+                cont.innerHTML += `<div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                    <p class="text-[10px] font-black text-gray-400 uppercase">Q${i+1}</p>
+                    <p class="text-sm font-bold text-gray-700 mb-1">${q.question}</p>
+                    <p class="text-sm text-[#1e3a8a] font-black">Your Choice: ${q.options[answers[i]]}</p>
+                </div>`;
+            });
+            document.getElementById('preview-modal').classList.remove('hidden');
+            if (window.MathJax) MathJax.typesetPromise();
+        }
+
+        function closePreview() { document.getElementById('preview-modal').classList.add('hidden'); }
+        
+        function goToFeedback() { 
+            document.getElementById('preview-modal').classList.add('hidden');
+            document.getElementById('section-quiz').classList.add('hidden');
+            document.getElementById('section-feedback').classList.remove('hidden'); 
+        }
+
+        async function finalFinish() {
+            let score = 0;
+            questions.forEach((q, i) => { if(answers[i] === q.correctIndex) score++; });
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const qId = urlParams.get('id') || "SSLC_MATHS_2026";
+
+            const result = {
+                name: document.getElementById('userName').value,
+                mobile: document.getElementById('userMobile').value,
+                district: document.getElementById('userDistrict').value,
+                feedback: document.getElementById('feedbackText').value,
+                quizId: qId,
+                score: score,
+                total: questions.length,
+                timestamp: new Date()
+            };
+
+            try {
+                await window.addDoc(window.collection(window.db, "results"), result);
+                document.getElementById('display-score').innerText = `${score}/${questions.length}`;
+                document.getElementById('success-name').innerText = result.name;
+                document.getElementById('success-mobile').innerText = `ID: ${result.mobile}`;
+                
+                const pct = (score/questions.length)*100;
+                document.getElementById('performance-msg').innerText = pct >= 80 ? "Excellent! You are ready for the exams." : "Good try! Review your materials on tnclassroom.com.";
+
+                document.getElementById('section-feedback').classList.add('hidden');
+                document.getElementById('section-success').classList.remove('hidden');
+            } catch (e) {
+                alert("Submission failed. Please check internet.");
+            }
+        }
+    </script>
+</body>
+</html>
