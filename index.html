@@ -111,7 +111,7 @@
                 <span id="display-score" class="text-5xl font-black text-green-600">0/0</span>
                 <p class="text-[10px] font-bold text-green-700 uppercase mt-2 font-black">Final Score</p>
             </div>
-            <h2 class="text-2xl font-black text-gray-800 mb-2">QUIZ COMPLETED!</h2>
+            <h2 class="text-2xl font-black text-gray-800 mb-2 tracking-tight">QUIZ COMPLETED!</h2>
             <p id="performance-msg" class="text-sm text-gray-500 font-medium mb-6 px-4"></p>
 
             <div class="text-left mb-8">
@@ -153,36 +153,42 @@
     </script>
 
     <script>
-        // VARIABLE TO CHANGE EASILY
+        // --- 1. CONFIGURATION ---
         const CURRENT_SUBJECT_NAME = "PSYCHOLOGY MCQ1";
-
         const tnDistricts = ["Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kancheepuram", "Kanniyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivagangai", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"];
+        
         let questions = [];
         let currentIdx = 0;
         let answers = [];
 
-        // LOAD SUBJECT NAME ON START
+        // --- 2. INITIALIZATION (Runs when page loads) ---
         document.addEventListener("DOMContentLoaded", () => {
+            // Show Subject
             document.getElementById('display-subject').innerText = CURRENT_SUBJECT_NAME;
+            
+            // Load Districts
+            const distSelect = document.getElementById('userDistrict');
+            tnDistricts.forEach(d => distSelect.add(new Option(d, d)));
         });
 
-        const distSelect = document.getElementById('userDistrict');
-        tnDistricts.forEach(d => distSelect.add(new Option(d, d)));
-
+        // --- 3. CORE FUNCTIONS ---
         async function startQuiz() {
             const name = document.getElementById('userName').value.trim();
             const mobile = document.getElementById('userMobile').value.trim();
             const dist = document.getElementById('userDistrict').value;
-            if(!name || mobile.length !== 10 || !dist) return alert("Fill all details.");
+            if(!name || mobile.length !== 10 || !dist) return alert("Please enter Name, 10-digit Mobile, and District.");
 
             try {
                 const urlParams = new URLSearchParams(window.location.search);
                 const quizId = urlParams.get('id') || "SSLC_MATHS_2026"; 
+                
                 const qRef = window.collection(window.db, "quizzes", quizId, "questions");
                 const qQuery = window.query(qRef, window.orderBy("qno"));
                 const querySnapshot = await window.getDocs(qQuery);
+                
                 questions = querySnapshot.docs.map(doc => doc.data());
-                if(questions.length === 0) return alert("Quiz not found.");
+                if(questions.length === 0) return alert("Quiz not found for ID: " + quizId);
+                
                 answers = new Array(questions.length).fill(null);
                 document.getElementById('section-reg').classList.add('hidden');
                 document.getElementById('section-quiz').classList.remove('hidden');
@@ -286,13 +292,12 @@
             });
 
             const urlParams = new URLSearchParams(window.location.search);
-            const qId = urlParams.get('id') || "SSLC_MATHS_2026";
             const result = {
                 name: document.getElementById('userName').value,
                 mobile: document.getElementById('userMobile').value,
                 district: document.getElementById('userDistrict').value,
                 feedback: document.getElementById('feedbackText').value,
-                quizId: qId,
+                quizId: urlParams.get('id') || "SSLC_MATHS_2026",
                 score, total: questions.length, timestamp: new Date()
             };
 
@@ -301,7 +306,6 @@
                 document.getElementById('display-score').innerText = `${score}/${questions.length}`;
                 document.getElementById('success-name').innerText = result.name;
                 document.getElementById('success-mobile').innerText = `ID: ${result.mobile}`;
-                document.getElementById('performance-msg').innerText = (score/questions.length >= 0.8) ? "Superb! You are exam-ready." : "Good effort! Review incorrect answers below.";
                 document.getElementById('section-feedback').classList.add('hidden');
                 document.getElementById('section-success').classList.remove('hidden');
                 window.scrollTo(0, 0);
