@@ -29,10 +29,10 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e3a8a; border-radius: 10px; }
 
         #result-summary-list {
-    max-height: 350px;
-    overflow-y: auto;
-    padding-right: 5px;
-}
+            max-height: 350px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
     </style>
 </head>
 <body class="bg-gray-100 font-sans antialiased min-h-screen">
@@ -43,8 +43,7 @@
 
     <div id="section-reg" class="flex items-center justify-center min-h-[90vh] p-4">
         <div class="w-full max-w-md bg-white rounded-[2.5rem] p-8 shadow-2xl border-t-4 border-[#1e3a8a]">
-            <h2 class="text-2xl font-black text-[#1e3a8a] text-center mb-6 uppercase tracking-tighter">Login</h2>
-
+            <h2 class="text-2xl font-black text-[#1e3a8a] text-center mb-1 uppercase tracking-tighter">Login</h2>
             <p id="display-subject" class="text-center text-[#1e3a8a] font-bold opacity-80 mb-6 uppercase tracking-widest text-xs border-b border-blue-50 pb-2"></p>
             
             <div class="space-y-4">
@@ -154,14 +153,18 @@
     </script>
 
     <script>
-
         // VARIABLE TO CHANGE EASILY
-    const CURRENT_SUBJECT_NAME = "PSYCHOLOGY MCQ1";
-        
+        const CURRENT_SUBJECT_NAME = "PSYCHOLOGY MCQ1";
+
         const tnDistricts = ["Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kancheepuram", "Kanniyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivagangai", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"];
         let questions = [];
         let currentIdx = 0;
         let answers = [];
+
+        // LOAD SUBJECT NAME ON START
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById('display-subject').innerText = CURRENT_SUBJECT_NAME;
+        });
 
         const distSelect = document.getElementById('userDistrict');
         tnDistricts.forEach(d => distSelect.add(new Option(d, d)));
@@ -195,12 +198,17 @@
             
             const qImg = document.getElementById('q-image');
             const imgCont = document.getElementById('img-container');
-            if(q.imageUrl && q.imageUrl.trim() !== "") { qImg.src = q.imageUrl; imgCont.classList.remove('hidden'); }
-            else { imgCont.classList.add('hidden'); }
+            if(q.imageUrl && q.imageUrl.trim() !== "") { 
+                qImg.src = q.imageUrl; 
+                imgCont.classList.remove('hidden'); 
+            } else { 
+                imgCont.classList.add('hidden'); 
+            }
 
             const list = document.getElementById('options-list');
             list.innerHTML = '';
             const labels = ['A', 'B', 'C', 'D'];
+            
             q.options.forEach((opt, i) => {
                 const btn = document.createElement('button');
                 btn.className = `w-full p-4 flex items-start justify-start bg-white border-2 rounded-2xl transition-all text-left group ${answers[currentIdx] === i ? 'option-selected border-green-500' : 'border-transparent'}`;
@@ -215,10 +223,8 @@
                     answers[currentIdx] = i;
                 };
                 list.appendChild(btn);
-
-                document.addEventListener("DOMContentLoaded", () => {
-        document.getElementById('display-subject').innerText = CURRENT_SUBJECT_NAME;
             });
+
             document.getElementById('btn-main').innerText = (currentIdx === questions.length - 1) ? "PREVIEW" : "NEXT QUESTION";
             if (window.MathJax) MathJax.typesetPromise();
         }
@@ -252,89 +258,56 @@
         }
 
         async function finalFinish() {
-    let score = 0;
-    const summaryList = document.getElementById('result-summary-list');
-    
-    // Clear the list before building so it doesn't duplicate if clicked twice
-    summaryList.innerHTML = ''; 
+            let score = 0;
+            const summaryList = document.getElementById('result-summary-list');
+            summaryList.innerHTML = ''; 
 
-    // 1. Calculate score and build the review list
-    questions.forEach((q, i) => {
-        // We use parseInt to ensure we are comparing numbers even if the sheet sent strings
-        const userChoice = parseInt(answers[i]);
-        const correctChoice = parseInt(q.correctIndex);
-        const isCorrect = userChoice === correctChoice;
+            questions.forEach((q, i) => {
+                const userChoice = parseInt(answers[i]);
+                const correctChoice = parseInt(q.correctIndex);
+                const isCorrect = userChoice === correctChoice;
+                if (isCorrect) score++;
 
-        if (isCorrect) score++;
+                const item = document.createElement('div');
+                item.className = `p-4 rounded-2xl border-2 mb-3 ${isCorrect ? 'border-green-100 bg-green-50' : 'border-red-100 bg-red-50'}`;
+                item.innerHTML = `
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-[10px] font-black uppercase ${isCorrect ? 'text-green-600' : 'text-red-600'}">
+                            Question ${i + 1} — ${isCorrect ? 'Correct' : 'Incorrect'}
+                        </span>
+                    </div>
+                    <p class="text-sm font-bold text-gray-800 mb-2 preview-text">${q.question}</p>
+                    <div class="text-xs font-bold space-y-1">
+                        <p class="${isCorrect ? 'text-green-700' : 'text-red-700'}">Your Answer: ${q.options[userChoice]}</p>
+                        ${!isCorrect ? `<p class="text-green-700 border-t border-red-200 pt-1 mt-1">Correct Answer: ${q.options[correctChoice]}</p>` : ''}
+                    </div>
+                `;
+                summaryList.appendChild(item);
+            });
 
-        // Create the review card for this question
-        const item = document.createElement('div');
-        item.className = `p-4 rounded-2xl border-2 mb-3 ${isCorrect ? 'border-green-100 bg-green-50' : 'border-red-100 bg-red-50'}`;
-        
-        item.innerHTML = `
-            <div class="flex justify-between items-start mb-1">
-                <span class="text-[10px] font-black uppercase ${isCorrect ? 'text-green-600' : 'text-red-600'}">
-                    Question ${i + 1} — ${isCorrect ? 'Correct' : 'Incorrect'}
-                </span>
-            </div>
-            <p class="text-sm font-bold text-gray-800 mb-2 preview-text">${q.question}</p>
-            <div class="text-xs font-bold space-y-1">
-                <p class="${isCorrect ? 'text-green-700' : 'text-red-700'}">
-                    Your Answer: ${q.options[userChoice]}
-                </p>
-                ${!isCorrect ? `
-                    <p class="text-green-700 border-t border-red-200 pt-1 mt-1">
-                        Correct Answer: ${q.options[correctChoice]}
-                    </p>` : ''}
-            </div>
-        `;
-        summaryList.appendChild(item);
-    });
+            const urlParams = new URLSearchParams(window.location.search);
+            const qId = urlParams.get('id') || "SSLC_MATHS_2026";
+            const result = {
+                name: document.getElementById('userName').value,
+                mobile: document.getElementById('userMobile').value,
+                district: document.getElementById('userDistrict').value,
+                feedback: document.getElementById('feedbackText').value,
+                quizId: qId,
+                score, total: questions.length, timestamp: new Date()
+            };
 
-    // 2. Prepare Data for Firebase
-    const urlParams = new URLSearchParams(window.location.search);
-    const qId = urlParams.get('id') || "SSLC_MATHS_2026";
-
-    const result = {
-        name: document.getElementById('userName').value,
-        mobile: document.getElementById('userMobile').value,
-        district: document.getElementById('userDistrict').value,
-        feedback: document.getElementById('feedbackText').value,
-        quizId: qId,
-        score: score,
-        total: questions.length,
-        timestamp: new Date()
-    };
-
-    try {
-        // 3. Upload to Firestore 'results' collection
-        await window.addDoc(window.collection(window.db, "results"), result);
-
-        // 4. Update the Success UI
-        document.getElementById('display-score').innerText = `${score}/${questions.length}`;
-        document.getElementById('success-name').innerText = result.name;
-        document.getElementById('success-mobile').innerText = `IDENTIFIER: ${result.mobile}`;
-        
-        const pct = (score / questions.length) * 100;
-        document.getElementById('performance-msg').innerText = pct >= 80 ? 
-            "Excellent! You have a strong command over this subject." : 
-            "Good effort! Review the incorrect answers below to improve.";
-
-        // 5. Switch to Success Screen
-        document.getElementById('section-feedback').classList.add('hidden');
-        document.getElementById('section-success').classList.remove('hidden');
-
-        // 6. Final UI Touch - Scroll back to top of the success screen
-        window.scrollTo(0, 0);
-
-        // Refresh MathJax for the results list formulas
-        if (window.MathJax) MathJax.typesetPromise();
-
-    } catch (e) {
-        console.error("Firebase Submission Error:", e);
-        alert("Submission failed. Please check your internet connection.");
-    }
-}
+            try {
+                await window.addDoc(window.collection(window.db, "results"), result);
+                document.getElementById('display-score').innerText = `${score}/${questions.length}`;
+                document.getElementById('success-name').innerText = result.name;
+                document.getElementById('success-mobile').innerText = `ID: ${result.mobile}`;
+                document.getElementById('performance-msg').innerText = (score/questions.length >= 0.8) ? "Superb! You are exam-ready." : "Good effort! Review incorrect answers below.";
+                document.getElementById('section-feedback').classList.add('hidden');
+                document.getElementById('section-success').classList.remove('hidden');
+                window.scrollTo(0, 0);
+                if (window.MathJax) MathJax.typesetPromise();
+            } catch (e) { alert("Submission error."); }
+        }
     </script>
 </body>
 </html>
