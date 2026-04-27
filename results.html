@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TNSED Admin | Results Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 font-sans antialiased">
+
+    <div class="bg-[#1e3a8a] text-white p-6 shadow-lg">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-black tracking-tighter uppercase">Results Dashboard</h1>
+            <button onclick="fetchResults()" class="bg-cyan-400 text-[#1e3a8a] px-6 py-2 rounded-xl font-bold hover:bg-white transition">REFRESH DATA</button>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto p-6">
+        <div class="bg-white p-6 rounded-3xl shadow-md grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div>
+                <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Filter by Quiz ID</label>
+                <input type="text" id="filterQuiz" oninput="applyFilters()" placeholder="e.g. PSY1-KANNA" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-[#1e3a8a]">
+            </div>
+            <div>
+                <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Filter by District</label>
+                <input type="text" id="filterDist" oninput="applyFilters()" placeholder="e.g. Thanjavur" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-[#1e3a8a]">
+            </div>
+            <div>
+                <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Search Name</label>
+                <input type="text" id="filterName" oninput="applyFilters()" placeholder="Student name..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-[#1e3a8a]">
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-slate-100 border-b border-slate-200">
+                        <tr>
+                            <th class="p-4 text-xs font-black uppercase text-slate-500">Timestamp</th>
+                            <th class="p-4 text-xs font-black uppercase text-slate-500">Student Name</th>
+                            <th class="p-4 text-xs font-black uppercase text-slate-500">District</th>
+                            <th class="p-4 text-xs font-black uppercase text-slate-500">Quiz ID</th>
+                            <th class="p-4 text-xs font-black uppercase text-slate-500 text-center">Score</th>
+                            <th class="p-4 text-xs font-black uppercase text-slate-500">Feedback</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody" class="divide-y divide-slate-100">
+                        </tbody>
+                </table>
+            </div>
+            <div id="loadingState" class="p-20 text-center text-slate-400 font-bold">
+                Click Refresh to load student data...
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBW92t7GWAf6vIHdJ83n7Nz7Io3y2GArVw",
+            authDomain: "tnclassroom-mcq-new.firebaseapp.com",
+            projectId: "tnclassroom-mcq-new",
+            storageBucket: "tnclassroom-mcq-new.firebasestorage.app",
+            messagingSenderId: "808928665241",
+            appId: "1:808928665241:web:5a8a9e3f4ee5b885c9a208",
+            measurementId: "G-L059C061EY"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        let allResults = [];
+
+        window.fetchResults = async () => {
+            const loader = document.getElementById('loadingState');
+            loader.innerText = "Fetching data from Firestore...";
+            
+            try {
+                const q = query(collection(db, "results"), orderBy("timestamp", "desc"));
+                const querySnapshot = await getDocs(q);
+                allResults = querySnapshot.docs.map(doc => doc.data());
+                renderTable(allResults);
+                loader.classList.add('hidden');
+            } catch (error) {
+                console.error(error);
+                loader.innerText = "Error loading data. Check console.";
+            }
+        };
+
+        window.applyFilters = () => {
+            const qId = document.getElementById('filterQuiz').value.toLowerCase();
+            const dist = document.getElementById('filterDist').value.toLowerCase();
+            const name = document.getElementById('filterName').value.toLowerCase();
+
+            const filtered = allResults.filter(r => {
+                return (r.quizId || "").toLowerCase().includes(qId) &&
+                       (r.district || "").toLowerCase().includes(dist) &&
+                       (r.name || "").toLowerCase().includes(name);
+            });
+            renderTable(filtered);
+        };
+
+        function renderTable(data) {
+            const body = document.getElementById('resultsTableBody');
+            body.innerHTML = '';
+
+            data.forEach(item => {
+                const date = item.timestamp?.toDate ? item.timestamp.toDate().toLocaleString() : "N/A";
+                const row = `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-4 text-[10px] text-slate-400 font-bold">${date}</td>
+                        <td class="p-4 font-bold text-slate-700">${item.name}</td>
+                        <td class="p-4 text-sm text-slate-600">${item.district}</td>
+                        <td class="p-4"><span class="bg-blue-100 text-blue-700 text-[10px] px-2 py-1 rounded-md font-black uppercase">${item.quizId}</span></td>
+                        <td class="p-4 text-center"><span class="font-black text-green-600 text-lg">${item.score}</span><span class="text-xs text-slate-400">/${item.total}</span></td>
+                        <td class="p-4 text-xs text-slate-500 italic max-w-xs truncate">${item.feedback || "—"}</td>
+                    </tr>
+                `;
+                body.innerHTML += row;
+            });
+        }
+    </script>
+</body>
+</html>
