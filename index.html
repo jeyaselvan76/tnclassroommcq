@@ -236,47 +236,89 @@
         }
 
         async function finalFinish() {
-            let score = 0;
-            const summaryList = document.getElementById('result-summary-list');
-            summaryList.innerHTML = '';
-            
-            questions.forEach((q, i) => {
-                const isCorrect = answers[i] === q.correctIndex;
-                if(isCorrect) score++;
-                const item = document.createElement('div');
-                item.className = `p-4 rounded-2xl border-2 ${isCorrect ? 'border-green-100 bg-green-50' : 'border-red-100 bg-red-50'}`;
-                item.innerHTML = `
-                    <p class="text-[10px] font-black uppercase ${isCorrect ? 'text-green-600' : 'text-red-600'} mb-1">Question ${i+1} — ${isCorrect ? 'Correct' : 'Incorrect'}</p>
-                    <p class="text-sm font-bold text-gray-800 mb-2 preview-text">${q.question}</p>
-                    <div class="text-xs font-bold">
-                        <p class="${isCorrect ? 'text-green-700' : 'text-red-700'}">Your Answer: ${q.options[answers[i]]}</p>
-                        ${!isCorrect ? `<p class="text-green-700 mt-1">Correct Answer: ${q.options[q.correctIndex]}</p>` : ''}
-                    </div>
-                `;
-                summaryList.appendChild(item);
-            });
+    let score = 0;
+    const summaryList = document.getElementById('result-summary-list');
+    
+    // Clear the list before building so it doesn't duplicate if clicked twice
+    summaryList.innerHTML = ''; 
 
-            const urlParams = new URLSearchParams(window.location.search);
-            const res = {
-                name: document.getElementById('userName').value,
-                mobile: document.getElementById('userMobile').value,
-                district: document.getElementById('userDistrict').value,
-                feedback: document.getElementById('feedbackText').value,
-                quizId: urlParams.get('id') || "SSLC_MATHS_2026",
-                score, total: questions.length, timestamp: new Date()
-            };
+    // 1. Calculate score and build the review list
+    questions.forEach((q, i) => {
+        // We use parseInt to ensure we are comparing numbers even if the sheet sent strings
+        const userChoice = parseInt(answers[i]);
+        const correctChoice = parseInt(q.correctIndex);
+        const isCorrect = userChoice === correctChoice;
 
-            try {
-                await window.addDoc(window.collection(window.db, "results"), res);
-                document.getElementById('display-score').innerText = `${score}/${questions.length}`;
-                document.getElementById('success-name').innerText = res.name;
-                document.getElementById('success-mobile').innerText = `ID: ${res.mobile}`;
-                document.getElementById('performance-msg').innerText = (score/questions.length >= 0.8) ? "Superb! You are exam-ready." : "Keep practicing to improve accuracy.";
-                document.getElementById('section-feedback').classList.add('hidden');
-                document.getElementById('section-success').classList.remove('hidden');
-                if (window.MathJax) MathJax.typesetPromise();
-            } catch (e) { alert("Submission error."); }
-        }
+        if (isCorrect) score++;
+
+        // Create the review card for this question
+        const item = document.createElement('div');
+        item.className = `p-4 rounded-2xl border-2 mb-3 ${isCorrect ? 'border-green-100 bg-green-50' : 'border-red-100 bg-red-50'}`;
+        
+        item.innerHTML = `
+            <div class="flex justify-between items-start mb-1">
+                <span class="text-[10px] font-black uppercase ${isCorrect ? 'text-green-600' : 'text-red-600'}">
+                    Question ${i + 1} — ${isCorrect ? 'Correct' : 'Incorrect'}
+                </span>
+            </div>
+            <p class="text-sm font-bold text-gray-800 mb-2 preview-text">${q.question}</p>
+            <div class="text-xs font-bold space-y-1">
+                <p class="${isCorrect ? 'text-green-700' : 'text-red-700'}">
+                    Your Answer: ${q.options[userChoice]}
+                </p>
+                ${!isCorrect ? `
+                    <p class="text-green-700 border-t border-red-200 pt-1 mt-1">
+                        Correct Answer: ${q.options[correctChoice]}
+                    </p>` : ''}
+            </div>
+        `;
+        summaryList.appendChild(item);
+    });
+
+    // 2. Prepare Data for Firebase
+    const urlParams = new URLSearchParams(window.location.search);
+    const qId = urlParams.get('id') || "SSLC_MATHS_2026";
+
+    const result = {
+        name: document.getElementById('userName').value,
+        mobile: document.getElementById('userMobile').value,
+        district: document.getElementById('userDistrict').value,
+        feedback: document.getElementById('feedbackText').value,
+        quizId: qId,
+        score: score,
+        total: questions.length,
+        timestamp: new Date()
+    };
+
+    try {
+        // 3. Upload to Firestore 'results' collection
+        await window.addDoc(window.collection(window.db, "results"), result);
+
+        // 4. Update the Success UI
+        document.getElementById('display-score').innerText = `${score}/${questions.length}`;
+        document.getElementById('success-name').innerText = result.name;
+        document.getElementById('success-mobile').innerText = `IDENTIFIER: ${result.mobile}`;
+        
+        const pct = (score / questions.length) * 100;
+        document.getElementById('performance-msg').innerText = pct >= 80 ? 
+            "Excellent! You have a strong command over this subject." : 
+            "Good effort! Review the incorrect answers below to improve.";
+
+        // 5. Switch to Success Screen
+        document.getElementById('section-feedback').classList.add('hidden');
+        document.getElementById('section-success').classList.remove('hidden');
+
+        // 6. Final UI Touch - Scroll back to top of the success screen
+        window.scrollTo(0, 0);
+
+        // Refresh MathJax for the results list formulas
+        if (window.MathJax) MathJax.typesetPromise();
+
+    } catch (e) {
+        console.error("Firebase Submission Error:", e);
+        alert("Submission failed. Please check your internet connection.");
+    }
+}
     </script>
 </body>
 </html>
