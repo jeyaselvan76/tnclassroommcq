@@ -44,6 +44,9 @@
     <div id="section-reg" class="flex items-center justify-center min-h-[90vh] p-4">
         <div class="w-full max-w-md bg-white rounded-[2.5rem] p-8 shadow-2xl border-t-4 border-[#1e3a8a]">
             <h2 class="text-2xl font-black text-[#1e3a8a] text-center mb-6 uppercase tracking-tighter">Login</h2>
+
+            <p id="display-subject" class="text-center text-[#1e3a8a] font-bold opacity-80 mb-6 uppercase tracking-widest text-xs border-b border-blue-50 pb-2"></p>
+            
             <div class="space-y-4">
                 <input type="text" id="userName" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:border-[#1e3a8a]" placeholder="Full Name">
                 <input type="tel" id="userMobile" maxlength="10" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:border-[#1e3a8a]" placeholder="Mobile Number">
@@ -151,6 +154,10 @@
     </script>
 
     <script>
+
+        // VARIABLE TO CHANGE EASILY
+    const CURRENT_SUBJECT_NAME = "PSYCHOLOGY MCQ1";
+        
         const tnDistricts = ["Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kancheepuram", "Kanniyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivagangai", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"];
         let questions = [];
         let currentIdx = 0;
@@ -208,6 +215,9 @@
                     answers[currentIdx] = i;
                 };
                 list.appendChild(btn);
+
+                document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById('display-subject').innerText = CURRENT_SUBJECT_NAME;
             });
             document.getElementById('btn-main').innerText = (currentIdx === questions.length - 1) ? "PREVIEW" : "NEXT QUESTION";
             if (window.MathJax) MathJax.typesetPromise();
