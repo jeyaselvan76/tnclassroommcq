@@ -29,7 +29,7 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e3a8a; border-radius: 10px; }
 
         #result-summary-list {
-            max-height: 350px;
+            max-height: 400px;
             overflow-y: auto;
             padding-right: 5px;
         }
@@ -44,8 +44,7 @@
     <div id="section-reg" class="flex items-center justify-center min-h-[90vh] p-4">
         <div class="w-full max-w-md bg-white rounded-[2.5rem] p-8 shadow-2xl border-t-4 border-[#1e3a8a]">
             <h2 class="text-2xl font-black text-[#1e3a8a] text-center mb-1 uppercase tracking-tighter">Login</h2>
-            
-            <p id="display-subject" class="text-center text-[#1e3a8a] font-bold opacity-80 mb-6 uppercase tracking-widest text-xs border-b border-blue-50 pb-2"></p>
+            <p id="display-subject" class="text-center text-[#1e3a8a] font-bold opacity-80 mb-6 uppercase tracking-widest text-xs border-b border-blue-50 pb-2">Loading Subject...</p>
             
             <div class="space-y-4">
                 <input type="text" id="userName" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:border-[#1e3a8a]" placeholder="Full Name">
@@ -62,7 +61,7 @@
         <div class="w-full max-w-6xl mx-auto text-white mb-6 pt-4 px-2">
             <div class="flex justify-between items-center mb-2">
                 <span id="progress-text" class="text-xs font-black opacity-80 uppercase tracking-widest">Loading...</span>
-                <span class="text-[10px] px-3 py-1 bg-cyan-400/20 text-cyan-300 rounded-full font-bold uppercase">Assessment Mode</span>
+                <span class="text-[10px] px-3 py-1 bg-cyan-400/20 text-cyan-300 rounded-full font-bold uppercase tracking-widest">Assessment</span>
             </div>
             <div class="w-full bg-blue-900/50 h-2 rounded-full overflow-hidden">
                 <div id="progress-bar" class="bg-cyan-400 h-full transition-all duration-500" style="width: 0%"></div>
@@ -101,30 +100,32 @@
     <div id="section-feedback" class="hidden flex items-center justify-center min-h-[90vh] p-4">
         <div class="w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-2xl text-center">
             <h2 class="text-2xl font-black text-gray-800 mb-6 uppercase">Feedback</h2>
-            <textarea id="feedbackText" class="w-full p-5 bg-gray-50 border rounded-3xl h-32 mb-6 focus:border-[#1e3a8a] outline-none" placeholder="Share your experience..."></textarea>
+            <textarea id="feedbackText" class="w-full p-5 bg-gray-50 border rounded-3xl h-32 mb-6 focus:border-[#1e3a8a] outline-none" placeholder="Share your suggestions..."></textarea>
             <button onclick="finalFinish()" class="w-full bg-[#1e3a8a] text-white py-5 rounded-3xl font-black uppercase tracking-widest shadow-xl active:scale-95 transition">Confirm Submit</button>
         </div>
     </div>
 
     <div id="section-success" class="hidden flex flex-col items-center justify-center min-h-screen p-4 bg-gray-100">
-        <div class="w-full max-w-2xl bg-white rounded-[3rem] p-8 lg:p-12 shadow-2xl text-center">
+        <div class="w-full max-w-3xl bg-white rounded-[3rem] p-8 lg:p-12 shadow-2xl text-center overflow-hidden">
             <div class="inline-block p-6 rounded-full bg-green-50 mb-4">
                 <span id="display-score" class="text-5xl font-black text-green-600">0/0</span>
-                <p class="text-[10px] font-bold text-green-700 uppercase mt-2 font-black">Final Score</p>
+                <p class="text-[10px] font-bold text-green-700 uppercase mt-2 font-black tracking-widest">Final Score</p>
             </div>
             <h2 class="text-2xl font-black text-gray-800 mb-2">QUIZ COMPLETED!</h2>
             <p id="performance-msg" class="text-sm text-gray-500 font-medium mb-6 px-4"></p>
 
             <div class="text-left mb-8">
-                <h3 class="text-xs font-black text-[#1e3a8a] uppercase mb-4 border-b pb-2">Answer Key & Review</h3>
-                <div id="result-summary-list" class="space-y-4 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar"></div>
+                <h3 class="text-xs font-black text-[#1e3a8a] uppercase mb-4 border-b pb-2 tracking-widest">Review Your Answers</h3>
+                <div id="result-summary-list" class="space-y-4 custom-scrollbar px-1"></div>
             </div>
 
-            <div class="bg-gray-50 rounded-2xl p-4 mb-6 text-left border border-gray-100">
-                <p id="success-name" class="text-sm font-bold text-gray-700"></p>
-                <p id="success-mobile" class="text-[10px] text-gray-400 font-bold uppercase"></p>
+            <div class="bg-gray-50 rounded-2xl p-4 mb-6 text-left border border-gray-100 flex justify-between items-center">
+                <div>
+                    <p id="success-name" class="text-sm font-bold text-gray-700"></p>
+                    <p id="success-mobile" class="text-[10px] text-gray-400 font-bold uppercase"></p>
+                </div>
+                <button onclick="location.reload()" class="bg-[#1e3a8a] text-white px-6 py-3 rounded-xl font-black text-xs uppercase shadow-md">Close Session</button>
             </div>
-            <button onclick="location.reload()" class="w-full bg-[#1e3a8a] text-white py-5 rounded-3xl font-black uppercase tracking-widest shadow-lg">Finish session</button>
         </div>
     </div>
 
@@ -154,29 +155,42 @@
     </script>
 
     <script>
+        // --- 1. CONFIGURATION ---
         const tnDistricts = ["Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kancheepuram", "Kanniyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivagangai", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"];
-        
         let questions = [];
         let currentIdx = 0;
         let answers = [];
 
-        // --- INITIALIZATION ---
-        document.addEventListener("DOMContentLoaded", () => {
-            // Automatically detect Quiz ID from URL and show as Subject Name
+        // --- 2. DYNAMIC INITIALIZATION ---
+        function initPortal() {
             const urlParams = new URLSearchParams(window.location.search);
-            const quizId = urlParams.get('id') || "SSLC_MATHS_2026";
-            document.getElementById('display-subject').innerText = quizId;
+            const quizId = urlParams.get('id');
+            const displayId = quizId ? quizId.replace(/_/g, ' ') : "SSLC MATHS 2026";
             
-            // Load Districts
-            const distSelect = document.getElementById('userDistrict');
-            tnDistricts.forEach(d => distSelect.add(new Option(d, d)));
-        });
+            // Set Subject Text
+            const subLabel = document.getElementById('display-subject');
+            if(subLabel) subLabel.innerText = displayId;
 
+            // Populate Districts
+            const distSelect = document.getElementById('userDistrict');
+            if(distSelect && distSelect.options.length <= 1) {
+                tnDistricts.forEach(d => distSelect.add(new Option(d, d)));
+            }
+        }
+
+        // Run as soon as page is ready
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initPortal);
+        } else {
+            initPortal();
+        }
+
+        // --- 3. CORE LOGIC ---
         async function startQuiz() {
             const name = document.getElementById('userName').value.trim();
             const mobile = document.getElementById('userMobile').value.trim();
             const dist = document.getElementById('userDistrict').value;
-            if(!name || mobile.length !== 10 || !dist) return alert("Fill all details correctly.");
+            if(!name || mobile.length !== 10 || !dist) return alert("Please enter Name, 10-digit Mobile, and District.");
 
             try {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -187,13 +201,13 @@
                 const querySnapshot = await window.getDocs(qQuery);
                 
                 questions = querySnapshot.docs.map(doc => doc.data());
-                if(questions.length === 0) return alert("Quiz not found in database.");
-
+                if(questions.length === 0) return alert("Quiz not found for ID: " + quizId);
+                
                 answers = new Array(questions.length).fill(null);
                 document.getElementById('section-reg').classList.add('hidden');
                 document.getElementById('section-quiz').classList.remove('hidden');
                 showQuestion();
-            } catch (e) { alert("Error connecting to database."); }
+            } catch (e) { alert("Database Error. Ensure internet connection."); }
         }
 
         function showQuestion() {
@@ -205,11 +219,8 @@
             const qImg = document.getElementById('q-image');
             const imgCont = document.getElementById('img-container');
             if(q.imageUrl && q.imageUrl.trim() !== "") { 
-                qImg.src = q.imageUrl; 
-                imgCont.classList.remove('hidden'); 
-            } else { 
-                imgCont.classList.add('hidden'); 
-            }
+                qImg.src = q.imageUrl; imgCont.classList.remove('hidden'); 
+            } else { imgCont.classList.add('hidden'); }
 
             const list = document.getElementById('options-list');
             list.innerHTML = '';
@@ -249,7 +260,7 @@
                 cont.innerHTML += `<div class="p-4 bg-gray-50 rounded-2xl border border-gray-100 text-left">
                     <p class="text-[10px] font-black text-gray-400 uppercase">Q${i+1}</p>
                     <p class="text-sm font-bold text-gray-700 mb-1 preview-text">${q.question}</p>
-                    <p class="text-sm text-[#1e3a8a] font-black preview-text">Selection: ${q.options[answers[i]]}</p>
+                    <p class="text-sm text-[#1e3a8a] font-black preview-text tracking-tight">Your Choice: ${q.options[answers[i]]}</p>
                 </div>`;
             });
             document.getElementById('preview-modal').classList.remove('hidden');
@@ -285,20 +296,20 @@
                     <p class="text-sm font-bold text-gray-800 mb-2 preview-text">${q.question}</p>
                     <div class="text-xs font-bold space-y-1">
                         <p class="${isCorrect ? 'text-green-700' : 'text-red-700'}">Your Answer: ${q.options[userChoice]}</p>
-                        ${!isCorrect ? `<p class="text-green-700 border-t border-red-200 pt-1 mt-1">Correct Answer: ${q.options[correctChoice]}</p>` : ''}
+                        ${!isCorrect ? `<p class="text-green-700 border-t border-red-200 pt-1 mt-1 font-bold">Correct Answer: ${q.options[correctChoice]}</p>` : ''}
                     </div>
                 `;
                 summaryList.appendChild(item);
             });
 
             const urlParams = new URLSearchParams(window.location.search);
-            const qId = urlParams.get('id') || "SSLC_MATHS_2026";
+            const quizId = urlParams.get('id') || "SSLC_MATHS_2026";
             const result = {
                 name: document.getElementById('userName').value,
                 mobile: document.getElementById('userMobile').value,
                 district: document.getElementById('userDistrict').value,
                 feedback: document.getElementById('feedbackText').value,
-                quizId: qId,
+                quizId: quizId,
                 score, total: questions.length, timestamp: new Date()
             };
 
@@ -307,11 +318,13 @@
                 document.getElementById('display-score').innerText = `${score}/${questions.length}`;
                 document.getElementById('success-name').innerText = result.name;
                 document.getElementById('success-mobile').innerText = `ID: ${result.mobile}`;
+                document.getElementById('performance-msg').innerText = (score/questions.length >= 0.8) ? "Superb performance! You are exam-ready." : "Decent attempt! Review incorrect answers below to improve.";
+                
                 document.getElementById('section-feedback').classList.add('hidden');
                 document.getElementById('section-success').classList.remove('hidden');
                 window.scrollTo(0, 0);
                 if (window.MathJax) MathJax.typesetPromise();
-            } catch (e) { alert("Submission error."); }
+            } catch (e) { alert("Submission error. Check Connection."); }
         }
     </script>
 </body>
