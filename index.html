@@ -274,58 +274,100 @@
             document.getElementById('section-feedback').classList.remove('hidden'); 
         }
 
-        async function finalFinish() {
-            let score = 0;
-            const summaryList = document.getElementById('result-summary-list');
-            summaryList.innerHTML = ''; 
+      async function finalFinish() {
+    // 1. Prevent double-submission by disabling the button
+    // We use the global 'event' object to find the button that was clicked
+    const submitBtn = event.target;
+    submitBtn.disabled = true;
+    submitBtn.innerText = "SUBMITTING...";
+    submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
-            questions.forEach((q, i) => {
-                const userChoice = parseInt(answers[i]);
-                const correctChoice = parseInt(q.correctIndex);
-                const isCorrect = userChoice === correctChoice;
-                if (isCorrect) score++;
+    let score = 0;
+    const summaryList = document.getElementById('result-summary-list');
+    
+    // Clear the list before building
+    summaryList.innerHTML = ''; 
 
-                const item = document.createElement('div');
-                item.className = `p-4 rounded-2xl border-2 mb-3 ${isCorrect ? 'border-green-100 bg-green-50' : 'border-red-100 bg-red-50'}`;
-                item.innerHTML = `
-                    <div class="flex justify-between items-start mb-1">
-                        <span class="text-[10px] font-black uppercase ${isCorrect ? 'text-green-600' : 'text-red-600'}">
-                            Question ${i + 1} — ${isCorrect ? 'Correct' : 'Incorrect'}
-                        </span>
-                    </div>
-                    <p class="text-sm font-bold text-gray-800 mb-2 preview-text">${q.question}</p>
-                    <div class="text-xs font-bold space-y-1">
-                        <p class="${isCorrect ? 'text-green-700' : 'text-red-700'}">Your Answer: ${q.options[userChoice]}</p>
-                        ${!isCorrect ? `<p class="text-green-700 border-t border-red-200 pt-1 mt-1 font-bold">Correct Answer: ${q.options[correctChoice]}</p>` : ''}
-                    </div>
-                `;
-                summaryList.appendChild(item);
-            });
+    // 2. Calculate score and build the review list
+    questions.forEach((q, i) => {
+        const userChoice = parseInt(answers[i]);
+        const correctChoice = parseInt(q.correctIndex);
+        const isCorrect = userChoice === correctChoice;
 
-            const urlParams = new URLSearchParams(window.location.search);
-            const quizId = urlParams.get('id') || "SSLC_MATHS_2026";
-            const result = {
-                name: document.getElementById('userName').value,
-                mobile: document.getElementById('userMobile').value,
-                district: document.getElementById('userDistrict').value,
-                feedback: document.getElementById('feedbackText').value,
-                quizId: quizId,
-                score, total: questions.length, timestamp: new Date()
-            };
+        if (isCorrect) score++;
 
-            try {
-                await window.addDoc(window.collection(window.db, "results"), result);
-                document.getElementById('display-score').innerText = `${score}/${questions.length}`;
-                document.getElementById('success-name').innerText = result.name;
-                document.getElementById('success-mobile').innerText = `ID: ${result.mobile}`;
-                document.getElementById('performance-msg').innerText = (score/questions.length >= 0.8) ? "Superb performance! You are exam-ready." : "Decent attempt! Review incorrect answers below to improve.";
-                
-                document.getElementById('section-feedback').classList.add('hidden');
-                document.getElementById('section-success').classList.remove('hidden');
-                window.scrollTo(0, 0);
-                if (window.MathJax) MathJax.typesetPromise();
-            } catch (e) { alert("Submission error. Check Connection."); }
-        }
+        const item = document.createElement('div');
+        item.className = `p-4 rounded-2xl border-2 mb-3 ${isCorrect ? 'border-green-100 bg-green-50' : 'border-red-100 bg-red-50'}`;
+        
+        item.innerHTML = `
+            <div class="flex justify-between items-start mb-1">
+                <span class="text-[10px] font-black uppercase ${isCorrect ? 'text-green-600' : 'text-red-600'}">
+                    Question ${i + 1} — ${isCorrect ? 'Correct' : 'Incorrect'}
+                </span>
+            </div>
+            <p class="text-sm font-bold text-gray-800 mb-2 preview-text">${q.question}</p>
+            <div class="text-xs font-bold space-y-1">
+                <p class="${isCorrect ? 'text-green-700' : 'text-red-700'}">
+                    Your Answer: ${q.options[userChoice]}
+                </p>
+                ${!isCorrect ? `
+                    <p class="text-green-700 border-t border-red-200 pt-1 mt-1 font-bold">
+                        Correct Answer: ${q.options[correctChoice]}
+                    </p>` : ''}
+            </div>
+        `;
+        summaryList.appendChild(item);
+    });
+
+    // 3. Prepare Data for Firebase
+    const urlParams = new URLSearchParams(window.location.search);
+    const quizId = urlParams.get('id') || "SSLC_MATHS_2026";
+
+    const result = {
+        name: document.getElementById('userName').value,
+        mobile: document.getElementById('userMobile').value,
+        district: document.getElementById('userDistrict').value,
+        feedback: document.getElementById('feedbackText').value,
+        quizId: quizId,
+        score: score,
+        total: questions.length,
+        timestamp: new Date()
+    };
+
+    try {
+        // 4. Upload to Firestore 'results' collection
+        await window.addDoc(window.collection(window.db, "results"), result);
+
+        // 5. Update the Success UI
+        document.getElementById('display-score').innerText = `${score}/${questions.length}`;
+        document.getElementById('success-name').innerText = result.name;
+        document.getElementById('success-mobile').innerText = `ID: ${result.mobile}`;
+        
+        const pct = (score / questions.length) * 100;
+        document.getElementById('performance-msg').innerText = pct >= 80 ? 
+            "Superb performance! You are exam-ready." : 
+            "Decent attempt! Review incorrect answers below to improve.";
+
+        // 6. Switch screens
+        document.getElementById('section-feedback').classList.add('hidden');
+        document.getElementById('section-success').classList.remove('hidden');
+
+        // Scroll back to top of the success screen
+        window.scrollTo(0, 0);
+
+        // Refresh MathJax for formulas in the results review
+        if (window.MathJax) MathJax.typesetPromise();
+
+    } catch (e) {
+        console.error("Firebase Submission Error:", e);
+        alert("Submission failed. Please check your internet connection.");
+        
+        // Re-enable button if there was a network error so they can try again
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Confirm Submit";
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+}
     </script>
 </body>
 </html>
