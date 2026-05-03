@@ -41,6 +41,7 @@
         <span class="text-[#1e3a8a] font-black text-xs tracking-widest uppercase">www.tnclassroom.com</span>
     </div>
 
+    <!-- SECTION 1: LOGIN -->
     <div id="section-reg" class="flex items-center justify-center min-h-[90vh] p-4">
         <div class="w-full max-w-md bg-white rounded-[2.5rem] p-8 shadow-2xl border-t-4 border-[#1e3a8a]">
             <h2 class="text-2xl font-black text-[#1e3a8a] text-center mb-1 uppercase tracking-tighter">Login</h2>
@@ -57,13 +58,14 @@
         </div>
     </div>
 
-    <div id="section-quiz" class="hidden min-h-screen bg-[#1e3a8a] p-4 pb-32">
+    <!-- SECTION 2: QUIZ INTERFACE - UPDATED BG COLOR HERE -->
+    <div id="section-quiz" class="hidden min-h-screen p-4 pb-32" style="background-color: #878386;">
         <div class="w-full max-w-6xl mx-auto text-white mb-6 pt-4 px-2">
             <div class="flex justify-between items-center mb-2">
                 <span id="progress-text" class="text-xs font-black opacity-80 uppercase tracking-widest">Loading...</span>
                 <span class="text-[10px] px-3 py-1 bg-cyan-400/20 text-cyan-300 rounded-full font-bold uppercase tracking-widest">Assessment</span>
             </div>
-            <div class="w-full bg-blue-900/50 h-2 rounded-full overflow-hidden">
+            <div class="w-full bg-black/20 h-2 rounded-full overflow-hidden">
                 <div id="progress-bar" class="bg-cyan-400 h-full transition-all duration-500" style="width: 0%"></div>
             </div>
         </div>
@@ -86,7 +88,8 @@
         </div>
     </div>
 
-    <div id="preview-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1e3a8a]/95 backdrop-blur-sm">
+    <!-- PREVIEW MODAL -->
+    <div id="preview-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
         <div class="w-full max-w-2xl bg-white rounded-[2.5rem] p-8 h-[85vh] flex flex-col shadow-2xl">
             <h2 class="text-xl font-black text-[#1e3a8a] mb-4 uppercase">Review Answers</h2>
             <div id="preview-content" class="flex-grow overflow-y-auto space-y-4 mb-6 pr-2 custom-scrollbar"></div>
@@ -97,6 +100,7 @@
         </div>
     </div>
 
+    <!-- FEEDBACK SECTION -->
     <div id="section-feedback" class="hidden flex items-center justify-center min-h-[90vh] p-4">
         <div class="w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-2xl text-center">
             <h2 class="text-2xl font-black text-gray-800 mb-6 uppercase">Feedback</h2>
@@ -105,6 +109,7 @@
         </div>
     </div>
 
+    <!-- SUCCESS & RESULTS SECTION -->
     <div id="section-success" class="hidden flex flex-col items-center justify-center min-h-screen p-4 bg-gray-100">
         <div class="w-full max-w-3xl bg-white rounded-[3rem] p-8 lg:p-12 shadow-2xl text-center overflow-hidden">
             <div class="inline-block p-6 rounded-full bg-green-50 mb-4">
@@ -274,100 +279,88 @@
             document.getElementById('section-feedback').classList.remove('hidden'); 
         }
 
-      async function finalFinish() {
-    // 1. Prevent double-submission by disabling the button
-    // We use the global 'event' object to find the button that was clicked
-    const submitBtn = event.target;
-    submitBtn.disabled = true;
-    submitBtn.innerText = "SUBMITTING...";
-    submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        async function finalFinish() {
+            const submitBtn = event.target;
+            submitBtn.disabled = true;
+            submitBtn.innerText = "SUBMITTING...";
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
-    let score = 0;
-    const summaryList = document.getElementById('result-summary-list');
-    
-    // Clear the list before building
-    summaryList.innerHTML = ''; 
+            let score = 0;
+            const summaryList = document.getElementById('result-summary-list');
+            summaryList.innerHTML = ''; 
 
-    // 2. Calculate score and build the review list
-    questions.forEach((q, i) => {
-        const userChoice = parseInt(answers[i]);
-        const correctChoice = parseInt(q.correctIndex);
-        const isCorrect = userChoice === correctChoice;
+            questions.forEach((q, i) => {
+                const userChoice = parseInt(answers[i]);
+                const correctChoice = parseInt(q.correctIndex);
+                const isCorrect = userChoice === correctChoice;
 
-        if (isCorrect) score++;
+                if (isCorrect) score++;
 
-        const item = document.createElement('div');
-        item.className = `p-4 rounded-2xl border-2 mb-3 ${isCorrect ? 'border-green-100 bg-green-50' : 'border-red-100 bg-red-50'}`;
-        
-        item.innerHTML = `
-            <div class="flex justify-between items-start mb-1">
-                <span class="text-[10px] font-black uppercase ${isCorrect ? 'text-green-600' : 'text-red-600'}">
-                    Question ${i + 1} — ${isCorrect ? 'Correct' : 'Incorrect'}
-                </span>
-            </div>
-            <p class="text-sm font-bold text-gray-800 mb-2 preview-text">${q.question}</p>
-            <div class="text-xs font-bold space-y-1">
-                <p class="${isCorrect ? 'text-green-700' : 'text-red-700'}">
-                    Your Answer: ${q.options[userChoice]}
-                </p>
-                ${!isCorrect ? `
-                    <p class="text-green-700 border-t border-red-200 pt-1 mt-1 font-bold">
-                        Correct Answer: ${q.options[correctChoice]}
-                    </p>` : ''}
-            </div>
-        `;
-        summaryList.appendChild(item);
-    });
+                const item = document.createElement('div');
+                item.className = `p-4 rounded-2xl border-2 mb-3 ${isCorrect ? 'border-green-100 bg-green-50' : 'border-red-100 bg-red-50'}`;
+                
+                item.innerHTML = `
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-[10px] font-black uppercase ${isCorrect ? 'text-green-600' : 'text-red-600'}">
+                            Question ${i + 1} — ${isCorrect ? 'Correct' : 'Incorrect'}
+                        </span>
+                    </div>
+                    <p class="text-sm font-bold text-gray-800 mb-2 preview-text">${q.question}</p>
+                    <div class="text-xs font-bold space-y-1">
+                        <p class="${isCorrect ? 'text-green-700' : 'text-red-700'}">
+                            Your Answer: ${q.options[userChoice]}
+                        </p>
+                        ${!isCorrect ? `
+                            <p class="text-green-700 border-t border-red-200 pt-1 mt-1 font-bold">
+                                Correct Answer: ${q.options[correctChoice]}
+                            </p>` : ''}
+                    </div>
+                `;
+                summaryList.appendChild(item);
+            });
 
-    // 3. Prepare Data for Firebase
-    const urlParams = new URLSearchParams(window.location.search);
-    const quizId = urlParams.get('id') || "SSLC_MATHS_2026";
+            const urlParams = new URLSearchParams(window.location.search);
+            const quizId = urlParams.get('id') || "SSLC_MATHS_2026";
 
-    const result = {
-        name: document.getElementById('userName').value,
-        mobile: document.getElementById('userMobile').value,
-        district: document.getElementById('userDistrict').value,
-        feedback: document.getElementById('feedbackText').value,
-        quizId: quizId,
-        score: score,
-        total: questions.length,
-        timestamp: new Date()
-    };
+            const result = {
+                name: document.getElementById('userName').value,
+                mobile: document.getElementById('userMobile').value,
+                district: document.getElementById('userDistrict').value,
+                feedback: document.getElementById('feedbackText').value,
+                quizId: quizId,
+                score: score,
+                total: questions.length,
+                timestamp: new Date()
+            };
 
-    try {
-        // 4. Upload to Firestore 'results' collection
-        await window.addDoc(window.collection(window.db, "results"), result);
+            try {
+                await window.addDoc(window.collection(window.db, "results"), result);
 
-        // 5. Update the Success UI
-        document.getElementById('display-score').innerText = `${score}/${questions.length}`;
-        document.getElementById('success-name').innerText = result.name;
-        document.getElementById('success-mobile').innerText = `ID: ${result.mobile}`;
-        
-        const pct = (score / questions.length) * 100;
-        document.getElementById('performance-msg').innerText = pct >= 80 ? 
-            "Superb performance! You are exam-ready." : 
-            "Decent attempt! Review incorrect answers below to improve.";
+                document.getElementById('display-score').innerText = `${score}/${questions.length}`;
+                document.getElementById('success-name').innerText = result.name;
+                document.getElementById('success-mobile').innerText = `ID: ${result.mobile}`;
+                
+                const pct = (score / questions.length) * 100;
+                document.getElementById('performance-msg').innerText = pct >= 80 ? 
+                    "Superb performance! You are exam-ready." : 
+                    "Decent attempt! Review incorrect answers below to improve.";
 
-        // 6. Switch screens
-        document.getElementById('section-feedback').classList.add('hidden');
-        document.getElementById('section-success').classList.remove('hidden');
+                document.getElementById('section-feedback').classList.add('hidden');
+                document.getElementById('section-success').classList.remove('hidden');
 
-        // Scroll back to top of the success screen
-        window.scrollTo(0, 0);
+                window.scrollTo(0, 0);
 
-        // Refresh MathJax for formulas in the results review
-        if (window.MathJax) MathJax.typesetPromise();
+                if (window.MathJax) MathJax.typesetPromise();
 
-    } catch (e) {
-        console.error("Firebase Submission Error:", e);
-        alert("Submission failed. Please check your internet connection.");
-        
-        // Re-enable button if there was a network error so they can try again
-        submitBtn.disabled = false;
-        submitBtn.innerText = "Confirm Submit";
-        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-    }
-}
+            } catch (e) {
+                console.error("Firebase Submission Error:", e);
+                alert("Submission failed. Please check your internet connection.");
+                
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Confirm Submit";
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
     </script>
 </body>
 </html>
