@@ -15,7 +15,7 @@
 
     <style>
         .option-selected { background-color: #bbf7d0 !important; border-color: #22c55e !important; }
-        .glass-nav { background: rgba(30, 58, 138, 0.9); backdrop-filter: blur(10px); }
+        .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
         body { -webkit-tap-highlight-color: transparent; }
         
         #q-text, .option-text, .preview-text { 
@@ -24,15 +24,18 @@
             word-wrap: break-word;
         }
 
+        /* Palette Styles */
+        .palette-btn { width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 12px; font-weight: bold; transition: all 0.2s; border: 2px solid transparent; }
+        .p-unanswered { background-color: #f3f4f6; color: #9ca3af; border-color: #e5e7eb; }
+        .p-answered { background-color: #22c55e; color: white; }
+        .p-skipped { background-color: #f59e0b; color: white; }
+        .p-current { border-color: #1e3a8a; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #1e3a8a; }
+
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e3a8a; border-radius: 10px; }
 
-        #result-summary-list {
-            max-height: 400px;
-            overflow-y: auto;
-            padding-right: 5px;
-        }
+        #result-summary-list { max-height: 400px; overflow-y: auto; padding-right: 5px; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans antialiased min-h-screen">
@@ -41,12 +44,11 @@
         <span class="text-[#1e3a8a] font-black text-xs tracking-widest uppercase">www.tnclassroom.com</span>
     </div>
 
-    <!-- SECTION 1: LOGIN -->
+    <!-- LOGIN SECTION -->
     <div id="section-reg" class="flex items-center justify-center min-h-[90vh] p-4">
         <div class="w-full max-w-md bg-white rounded-[2.5rem] p-8 shadow-2xl border-t-4 border-[#1e3a8a]">
             <h2 class="text-2xl font-black text-[#1e3a8a] text-center mb-1 uppercase tracking-tighter">Login</h2>
             <p id="display-subject" class="text-center text-[#1e3a8a] font-bold opacity-80 mb-6 uppercase tracking-widest text-xs border-b border-blue-50 pb-2">Loading Subject...</p>
-            
             <div class="space-y-4">
                 <input type="text" id="userName" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:border-[#1e3a8a]" placeholder="Full Name">
                 <input type="tel" id="userMobile" maxlength="10" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:border-[#1e3a8a]" placeholder="Mobile Number">
@@ -58,20 +60,30 @@
         </div>
     </div>
 
-    <!-- SECTION 2: QUIZ INTERFACE - UPDATED BG COLOR HERE -->
-    <div id="section-quiz" class="hidden min-h-screen p-4 pb-32" style="background-color: #878386;">
-        <div class="w-full max-w-6xl mx-auto text-white mb-6 pt-4 px-2">
-            <div class="flex justify-between items-center mb-2">
-                <span id="progress-text" class="text-xs font-black opacity-80 uppercase tracking-widest">Loading...</span>
-                <span class="text-[10px] px-3 py-1 bg-cyan-400/20 text-cyan-300 rounded-full font-bold uppercase tracking-widest">Assessment</span>
+    <!-- QUIZ INTERFACE - UPDATED TO WHITE BACKGROUND -->
+    <div id="section-quiz" class="hidden min-h-screen p-4 pb-32 bg-white">
+        <!-- Status Dashboard -->
+        <div class="w-full max-w-6xl mx-auto grid grid-cols-4 gap-2 mb-6">
+            <div class="bg-gray-100 p-3 rounded-2xl text-center border border-gray-200">
+                <p class="text-[10px] text-gray-500 font-black uppercase">Total</p>
+                <p id="stat-total" class="text-[#1e3a8a] font-black text-xl">0</p>
             </div>
-            <div class="w-full bg-black/20 h-2 rounded-full overflow-hidden">
-                <div id="progress-bar" class="bg-cyan-400 h-full transition-all duration-500" style="width: 0%"></div>
+            <div class="bg-green-50 p-3 rounded-2xl text-center border border-green-100">
+                <p class="text-[10px] text-green-600 font-black uppercase">Answered</p>
+                <p id="stat-answered" class="text-green-600 font-black text-xl">0</p>
+            </div>
+            <div class="bg-orange-50 p-3 rounded-2xl text-center border border-orange-100">
+                <p class="text-[10px] text-orange-600 font-black uppercase">Skipped</p>
+                <p id="stat-skipped" class="text-orange-600 font-black text-xl">0</p>
+            </div>
+            <div class="bg-gray-50 p-3 rounded-2xl text-center border border-gray-200">
+                <p class="text-[10px] text-gray-400 font-black uppercase">Remaining</p>
+                <p id="stat-left" class="text-gray-400 font-black text-xl">0</p>
             </div>
         </div>
 
-        <div class="w-full max-w-6xl mx-auto flex flex-col lg:flex-row gap-6 px-2">
-            <div class="flex-1 bg-[#e0f2fe] rounded-[2.5rem] lg:rounded-[3.5rem] p-6 lg:p-12 shadow-2xl self-start text-left">
+        <div class="w-full max-w-6xl mx-auto flex flex-col lg:flex-row gap-6 px-2 mb-8">
+            <div class="flex-1 bg-gray-50 rounded-[2.5rem] lg:rounded-[3.5rem] p-6 lg:p-12 border border-gray-100 shadow-sm self-start text-left">
                 <div id="img-container" class="hidden mb-6 rounded-3xl overflow-hidden border-4 border-white shadow-md bg-white">
                     <img id="q-image" src="" class="w-full h-48 lg:h-72 object-contain">
                 </div>
@@ -80,16 +92,24 @@
             <div id="options-list" class="flex-1 space-y-3"></div>
         </div>
 
+        <!-- Question Palette -->
+        <div class="w-full max-w-6xl mx-auto bg-gray-50 p-6 rounded-[2.5rem] border border-gray-100">
+            <p class="text-gray-400 text-[10px] font-black uppercase mb-4 tracking-widest">Question Navigator</p>
+            <div id="question-palette" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- Sticky Controls -->
         <div class="fixed bottom-0 left-0 right-0 p-4 flex justify-center z-40">
-            <div class="w-full max-w-md glass-nav rounded-[2rem] p-3 flex justify-between gap-3 shadow-2xl border border-white/10">
-                <button onclick="prevQuestion()" class="flex-1 py-4 bg-white/10 text-white rounded-2xl font-bold border border-white/5 active:bg-white/20 transition">PREV</button>
-                <button id="btn-main" onclick="nextOrPreview()" class="flex-[2] py-4 bg-cyan-400 text-[#1e3a8a] rounded-2xl font-black shadow-lg uppercase tracking-tight transform active:scale-95 transition">NEXT QUESTION</button>
+            <div class="w-full max-w-lg glass-nav rounded-[2rem] p-3 flex justify-between gap-2 shadow-2xl border border-gray-200">
+                <button onclick="prevQuestion()" class="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold text-xs uppercase hover:bg-gray-200 transition">Prev</button>
+                <button onclick="skipQuestion()" class="flex-1 py-4 bg-orange-100 text-orange-600 rounded-2xl font-bold text-xs uppercase hover:bg-orange-200 transition border border-orange-200">Skip</button>
+                <button id="btn-main" onclick="nextOrPreview()" class="flex-[2] py-4 bg-cyan-400 text-[#1e3a8a] rounded-2xl font-black text-xs shadow-lg uppercase hover:bg-cyan-300 transition">Next</button>
             </div>
         </div>
     </div>
 
     <!-- PREVIEW MODAL -->
-    <div id="preview-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+    <div id="preview-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1e3a8a]/95 backdrop-blur-sm">
         <div class="w-full max-w-2xl bg-white rounded-[2.5rem] p-8 h-[85vh] flex flex-col shadow-2xl">
             <h2 class="text-xl font-black text-[#1e3a8a] mb-4 uppercase">Review Answers</h2>
             <div id="preview-content" class="flex-grow overflow-y-auto space-y-4 mb-6 pr-2 custom-scrollbar"></div>
@@ -109,26 +129,21 @@
         </div>
     </div>
 
-    <!-- SUCCESS & RESULTS SECTION -->
+    <!-- SUCCESS SECTION -->
     <div id="section-success" class="hidden flex flex-col items-center justify-center min-h-screen p-4 bg-gray-100">
         <div class="w-full max-w-3xl bg-white rounded-[3rem] p-8 lg:p-12 shadow-2xl text-center overflow-hidden">
             <div class="inline-block p-6 rounded-full bg-green-50 mb-4">
                 <span id="display-score" class="text-5xl font-black text-green-600">0/0</span>
                 <p class="text-[10px] font-bold text-green-700 uppercase mt-2 font-black tracking-widest">Final Score</p>
             </div>
-            <h2 class="text-2xl font-black text-gray-800 mb-2">QUIZ COMPLETED!</h2>
+            <h2 class="text-2xl font-black text-gray-800 mb-2 uppercase">Quiz Completed!</h2>
             <p id="performance-msg" class="text-sm text-gray-500 font-medium mb-6 px-4"></p>
-
             <div class="text-left mb-8">
                 <h3 class="text-xs font-black text-[#1e3a8a] uppercase mb-4 border-b pb-2 tracking-widest">Review Your Answers</h3>
                 <div id="result-summary-list" class="space-y-4 custom-scrollbar px-1"></div>
             </div>
-
             <div class="bg-gray-50 rounded-2xl p-4 mb-6 text-left border border-gray-100 flex justify-between items-center">
-                <div>
-                    <p id="success-name" class="text-sm font-bold text-gray-700"></p>
-                    <p id="success-mobile" class="text-[10px] text-gray-400 font-bold uppercase"></p>
-                </div>
+                <div><p id="success-name" class="text-sm font-bold text-gray-700"></p><p id="success-mobile" class="text-[10px] text-gray-400 font-bold uppercase"></p></div>
                 <button onclick="location.reload()" class="bg-[#1e3a8a] text-white px-6 py-3 rounded-xl font-black text-xs uppercase shadow-md">Close Session</button>
             </div>
         </div>
@@ -150,47 +165,28 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
-        window.db = db;
-        window.collection = collection;
-        window.getDocs = getDocs;
-        window.addDoc = addDoc;
-        window.query = query;
-        window.orderBy = orderBy;
+        window.db = db; window.collection = collection; window.getDocs = getDocs; window.addDoc = addDoc; window.query = query; window.orderBy = orderBy;
     </script>
 
     <script>
-        // --- 1. CONFIGURATION ---
         const tnDistricts = ["Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kancheepuram", "Kanniyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivagangai", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"];
         let questions = [];
         let currentIdx = 0;
-        let answers = [];
+        let answers = []; 
+        let skipped = []; 
 
-        // --- 2. DYNAMIC INITIALIZATION ---
         function initPortal() {
             const urlParams = new URLSearchParams(window.location.search);
             const quizId = urlParams.get('id');
             const displayId = quizId ? quizId.replace(/_/g, ' ') : "SSLC MATHS 2026";
-            
-            // Set Subject Text
             const subLabel = document.getElementById('display-subject');
             if(subLabel) subLabel.innerText = displayId;
-
-            // Populate Districts
             const distSelect = document.getElementById('userDistrict');
-            if(distSelect && distSelect.options.length <= 1) {
-                tnDistricts.forEach(d => distSelect.add(new Option(d, d)));
-            }
+            if(distSelect && distSelect.options.length <= 1) { tnDistricts.forEach(d => distSelect.add(new Option(d, d))); }
         }
 
-        // Run as soon as page is ready
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", initPortal);
-        } else {
-            initPortal();
-        }
+        if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", initPortal); } else { initPortal(); }
 
-        // --- 3. CORE LOGIC ---
         async function startQuiz() {
             const name = document.getElementById('userName').value.trim();
             const mobile = document.getElementById('userMobile').value.trim();
@@ -200,32 +196,59 @@
             try {
                 const urlParams = new URLSearchParams(window.location.search);
                 const quizId = urlParams.get('id') || "SSLC_MATHS_2026"; 
-                
                 const qRef = window.collection(window.db, "quizzes", quizId, "questions");
                 const qQuery = window.query(qRef, window.orderBy("qno"));
                 const querySnapshot = await window.getDocs(qQuery);
-                
                 questions = querySnapshot.docs.map(doc => doc.data());
-                if(questions.length === 0) return alert("Quiz not found for ID: " + quizId);
+                if(questions.length === 0) return alert("Quiz not found.");
                 
                 answers = new Array(questions.length).fill(null);
+                skipped = new Array(questions.length).fill(false);
+                
                 document.getElementById('section-reg').classList.add('hidden');
                 document.getElementById('section-quiz').classList.remove('hidden');
+                updatePalette();
                 showQuestion();
-            } catch (e) { alert("Database Error. Ensure internet connection."); }
+            } catch (e) { alert("Database Error."); }
+        }
+
+        function updatePalette() {
+            const palette = document.getElementById('question-palette');
+            palette.innerHTML = '';
+            
+            let ansCount = 0;
+            let skipCount = 0;
+
+            questions.forEach((_, i) => {
+                const btn = document.createElement('button');
+                btn.innerText = i + 1;
+                let statusClass = 'p-unanswered';
+                
+                if (answers[i] !== null) {
+                    statusClass = 'p-answered';
+                    ansCount++;
+                } else if (skipped[i]) {
+                    statusClass = 'p-skipped';
+                    skipCount++;
+                }
+
+                btn.className = `palette-btn ${statusClass} ${i === currentIdx ? 'p-current' : ''}`;
+                btn.onclick = () => { currentIdx = i; showQuestion(); };
+                palette.appendChild(btn);
+            });
+
+            document.getElementById('stat-total').innerText = questions.length;
+            document.getElementById('stat-answered').innerText = ansCount;
+            document.getElementById('stat-skipped').innerText = skipCount;
+            document.getElementById('stat-left').innerText = questions.length - ansCount - skipCount;
         }
 
         function showQuestion() {
             const q = questions[currentIdx];
-            document.getElementById('progress-text').innerText = `Question ${currentIdx + 1}/${questions.length}`;
-            document.getElementById('progress-bar').style.width = `${((currentIdx + 1) / questions.length) * 100}%`;
             document.getElementById('q-text').innerHTML = q.question;
-            
             const qImg = document.getElementById('q-image');
             const imgCont = document.getElementById('img-container');
-            if(q.imageUrl && q.imageUrl.trim() !== "") { 
-                qImg.src = q.imageUrl; imgCont.classList.remove('hidden'); 
-            } else { imgCont.classList.add('hidden'); }
+            if(q.imageUrl && q.imageUrl.trim() !== "") { qImg.src = q.imageUrl; imgCont.classList.remove('hidden'); } else { imgCont.classList.add('hidden'); }
 
             const list = document.getElementById('options-list');
             list.innerHTML = '';
@@ -233,27 +256,39 @@
             
             q.options.forEach((opt, i) => {
                 const btn = document.createElement('button');
-                btn.className = `w-full p-4 flex items-start justify-start bg-white border-2 rounded-2xl transition-all text-left group ${answers[currentIdx] === i ? 'option-selected border-green-500' : 'border-transparent'}`;
-                btn.innerHTML = `
-                    <span class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-[#1e3a8a] text-white rounded-full text-[10px] font-black mr-4 mt-0.5">${labels[i]}</span>
-                    <div class="flex-grow text-left"><span class="block font-bold text-gray-700 option-text text-left">${opt}</span></div>
-                    <span class="text-green-600 font-bold ml-2 mt-0.5 flex-shrink-0 ${answers[currentIdx] === i ? '' : 'hidden'}">✓</span>
-                `;
+                btn.className = `w-full p-4 flex items-start justify-start bg-white border-2 rounded-2xl transition-all text-left group ${answers[currentIdx] === i ? 'option-selected border-green-500' : 'border-gray-200'}`;
+                btn.innerHTML = `<span class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-[#1e3a8a] text-white rounded-full text-[10px] font-black mr-4 mt-0.5">${labels[i]}</span><div class="flex-grow text-left"><span class="block font-bold text-gray-700 option-text text-left">${opt}</span></div>`;
                 btn.onclick = () => {
-                    document.querySelectorAll('#options-list button').forEach(b => b.classList.remove('option-selected', 'border-green-500'));
-                    btn.classList.add('option-selected', 'border-green-500');
                     answers[currentIdx] = i;
+                    skipped[currentIdx] = false;
+                    updatePalette();
+                    showQuestion();
                 };
                 list.appendChild(btn);
             });
 
-            document.getElementById('btn-main').innerText = (currentIdx === questions.length - 1) ? "PREVIEW" : "NEXT QUESTION";
+            document.getElementById('btn-main').innerText = (currentIdx === questions.length - 1) ? "PREVIEW" : "NEXT";
+            updatePalette();
             if (window.MathJax) MathJax.typesetPromise();
         }
 
+        function skipQuestion() {
+            if (answers[currentIdx] === null) skipped[currentIdx] = true;
+            if (currentIdx < questions.length - 1) {
+                currentIdx++;
+                showQuestion();
+            } else {
+                updatePalette();
+            }
+        }
+
         function nextOrPreview() {
-            if(answers[currentIdx] === null) return alert("Select an answer");
-            if(currentIdx < questions.length - 1) { currentIdx++; showQuestion(); } else { showPreview(); }
+            if(currentIdx < questions.length - 1) {
+                currentIdx++;
+                showQuestion();
+            } else {
+                showPreview();
+            }
         }
 
         function prevQuestion() { if(currentIdx > 0) { currentIdx--; showQuestion(); } }
@@ -262,10 +297,13 @@
             const cont = document.getElementById('preview-content');
             cont.innerHTML = '';
             questions.forEach((q, i) => {
+                let selectionText = answers[i] !== null ? q.options[answers[i]] : (skipped[i] ? "SKIPPED" : "NOT ANSWERED");
+                let colorClass = answers[i] !== null ? "text-[#1e3a8a]" : "text-orange-500";
+                
                 cont.innerHTML += `<div class="p-4 bg-gray-50 rounded-2xl border border-gray-100 text-left">
                     <p class="text-[10px] font-black text-gray-400 uppercase">Q${i+1}</p>
                     <p class="text-sm font-bold text-gray-700 mb-1 preview-text">${q.question}</p>
-                    <p class="text-sm text-[#1e3a8a] font-black preview-text tracking-tight">Your Choice: ${q.options[answers[i]]}</p>
+                    <p class="text-sm font-black preview-text ${colorClass}">Selection: ${selectionText}</p>
                 </div>`;
             });
             document.getElementById('preview-modal').classList.remove('hidden');
@@ -283,7 +321,6 @@
             const submitBtn = event.target;
             submitBtn.disabled = true;
             submitBtn.innerText = "SUBMITTING...";
-            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
             let score = 0;
             const summaryList = document.getElementById('result-summary-list');
@@ -293,73 +330,41 @@
                 const userChoice = parseInt(answers[i]);
                 const correctChoice = parseInt(q.correctIndex);
                 const isCorrect = userChoice === correctChoice;
-
                 if (isCorrect) score++;
 
                 const item = document.createElement('div');
                 item.className = `p-4 rounded-2xl border-2 mb-3 ${isCorrect ? 'border-green-100 bg-green-50' : 'border-red-100 bg-red-50'}`;
-                
                 item.innerHTML = `
                     <div class="flex justify-between items-start mb-1">
-                        <span class="text-[10px] font-black uppercase ${isCorrect ? 'text-green-600' : 'text-red-600'}">
-                            Question ${i + 1} — ${isCorrect ? 'Correct' : 'Incorrect'}
-                        </span>
+                        <span class="text-[10px] font-black uppercase ${isCorrect ? 'text-green-600' : 'text-red-600'}">Question ${i + 1}</span>
                     </div>
                     <p class="text-sm font-bold text-gray-800 mb-2 preview-text">${q.question}</p>
                     <div class="text-xs font-bold space-y-1">
-                        <p class="${isCorrect ? 'text-green-700' : 'text-red-700'}">
-                            Your Answer: ${q.options[userChoice]}
-                        </p>
-                        ${!isCorrect ? `
-                            <p class="text-green-700 border-t border-red-200 pt-1 mt-1 font-bold">
-                                Correct Answer: ${q.options[correctChoice]}
-                            </p>` : ''}
-                    </div>
-                `;
+                        <p>Your Answer: ${answers[i] !== null ? q.options[answers[i]] : 'None'}</p>
+                        ${!isCorrect ? `<p class="text-green-700 border-t pt-1 mt-1">Correct Answer: ${q.options[correctChoice]}</p>` : ''}
+                    </div>`;
                 summaryList.appendChild(item);
             });
 
             const urlParams = new URLSearchParams(window.location.search);
-            const quizId = urlParams.get('id') || "SSLC_MATHS_2026";
-
-            const result = {
+            const res = {
                 name: document.getElementById('userName').value,
                 mobile: document.getElementById('userMobile').value,
                 district: document.getElementById('userDistrict').value,
                 feedback: document.getElementById('feedbackText').value,
-                quizId: quizId,
-                score: score,
-                total: questions.length,
-                timestamp: new Date()
+                quizId: urlParams.get('id') || "SSLC_MATHS_2026",
+                score, total: questions.length, timestamp: new Date()
             };
 
             try {
-                await window.addDoc(window.collection(window.db, "results"), result);
-
+                await window.addDoc(window.collection(window.db, "results"), res);
                 document.getElementById('display-score').innerText = `${score}/${questions.length}`;
-                document.getElementById('success-name').innerText = result.name;
-                document.getElementById('success-mobile').innerText = `ID: ${result.mobile}`;
-                
-                const pct = (score / questions.length) * 100;
-                document.getElementById('performance-msg').innerText = pct >= 80 ? 
-                    "Superb performance! You are exam-ready." : 
-                    "Decent attempt! Review incorrect answers below to improve.";
-
+                document.getElementById('success-name').innerText = res.name;
+                document.getElementById('success-mobile').innerText = `ID: ${res.mobile}`;
                 document.getElementById('section-feedback').classList.add('hidden');
                 document.getElementById('section-success').classList.remove('hidden');
-
                 window.scrollTo(0, 0);
-
-                if (window.MathJax) MathJax.typesetPromise();
-
-            } catch (e) {
-                console.error("Firebase Submission Error:", e);
-                alert("Submission failed. Please check your internet connection.");
-                
-                submitBtn.disabled = false;
-                submitBtn.innerText = "Confirm Submit";
-                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
+            } catch (e) { alert("Submission error."); submitBtn.disabled = false; }
         }
     </script>
 </body>
