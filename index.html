@@ -6,174 +6,96 @@
     <title>TNSED MCQ Portal | WWW.TNCLASSROOM.COM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- MATHJAX 3 CONFIGURATION -->
     <script>
       window.MathJax = {
-        tex: {
-          inlineMath: [['$', '$'], ['\\(', '\\)']],
-          processEscapes: true
-        },
-        options: {
-          skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
-          ignoreHtmlClass: 'tex2jax_ignore',
-          processHtmlClass: 'tex2jax_process'
-        }
+        tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+        options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
       };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        /* 1. Core Typography & Tamil Ligature Fixes */
-        body { 
-            -webkit-tap-highlight-color: transparent; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #ffffff;
-        }
+        body { -webkit-tap-highlight-color: transparent; font-family: sans-serif; background-color: white; }
         
-        #q-text, .option-text, .preview-text { 
-            white-space: pre-wrap; 
-            text-align: left !important;
-            word-wrap: break-word;
-            line-height: 1.6;
+        /* THE PROTECTIVE CLASS: This forces the browser to render Tamil ligatures correctly */
+        .tamil-fix {
             font-family: 'Segoe UI', 'Latha', 'Tamil Sangam MN', sans-serif !important;
-        }
-
-        /* CRITICAL: Forces MathJax to render Tamil text as a single unit to prevent character splitting */
-        mjx-utext {
-            font-family: 'Segoe UI', 'Latha', sans-serif !important;
-            font-style: normal !important;
             display: inline-block !important;
             white-space: nowrap !important;
+            font-style: normal !important;
+            font-weight: 600 !important;
+            padding: 0 2px;
+            color: #1e3a8a; /* Navy blue for formulas */
         }
 
-        /* 2. Interactive Elements */
-        .option-selected { 
-            background-color: #bbf7d0 !important; 
-            border-color: #22c55e !important; 
-        }
-
-        .glass-nav { 
-            background: rgba(255, 255, 255, 0.95); 
-            backdrop-filter: blur(12px); 
-            border-top: 1px solid #e5e7eb;
-        }
-
-        /* 3. Question Palette (Navigation) */
-        .palette-btn { 
-            width: 38px; 
-            height: 38px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            border-radius: 10px; 
-            font-size: 13px; 
-            font-weight: 800; 
-            transition: all 0.2s; 
-            border: 2px solid transparent; 
-        }
+        /* Styling for the status chips */
+        .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 10px; text-align: center; }
         
-        .p-unanswered { background-color: #f3f4f6; color: #9ca3af; border-color: #e5e7eb; }
-        .p-answered { background-color: #22c55e; color: white; }
-        .p-skipped { background-color: #f59e0b; color: white; }
-        
-        .p-current { 
-            border-color: #1e3a8a; 
-            background-color: white;
-            color: #1e3a8a;
-            box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1e3a8a; 
-        }
+        /* Navigator Palette */
+        .palette-btn { width: 35px; height: 35px; border-radius: 8px; font-weight: 800; font-size: 12px; transition: 0.2s; }
+        .p-unanswered { background: #f1f5f9; color: #94a3b8; }
+        .p-answered { background: #22c55e; color: white; }
+        .p-skipped { background: #f59e0b; color: white; }
+        .p-current { border: 3px solid #1e3a8a; background: white; color: #1e3a8a; }
 
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e3a8a; border-radius: 10px; }
-
-        #result-summary-list { max-height: 450px; overflow-y: auto; padding-right: 8px; }
+        .option-selected { background-color: #f0fdf4 !important; border-color: #22c55e !important; box-shadow: 0 0 0 1px #22c55e; }
+        .glass-nav { background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-top: 1px solid #e2e8f0; }
     </style>
 </head>
 <body class="antialiased min-h-screen">
 
-    <div class="w-full py-2 bg-white text-center border-b border-gray-200 sticky top-0 z-50">
-        <span class="text-[#1e3a8a] font-black text-xs tracking-widest uppercase">www.tnclassroom.com</span>
+    <div class="w-full py-2 bg-white text-center border-b border-gray-100 sticky top-0 z-50">
+        <span id="display-subject" class="text-[#1e3a8a] font-black text-[10px] tracking-widest uppercase">www.tnclassroom.com</span>
     </div>
 
-    <!-- LOGIN SECTION -->
-    <div id="section-reg" class="flex items-center justify-center min-h-[90vh] p-4">
-        <div class="w-full max-w-md bg-white rounded-[2.5rem] p-8 shadow-2xl border-t-4 border-[#1e3a8a]">
-            <h2 class="text-2xl font-black text-[#1e3a8a] text-center mb-1 uppercase tracking-tighter">Login</h2>
-            <p id="display-subject" class="text-center text-[#1e3a8a] font-bold opacity-80 mb-6 uppercase tracking-widest text-xs border-b border-blue-50 pb-2">Loading Subject...</p>
+    <div id="section-reg" class="flex items-center justify-center min-h-[85vh] p-4">
+        <div class="w-full max-w-md bg-white rounded-[2.5rem] p-8 shadow-2xl border-t-8 border-[#1e3a8a]">
+            <h2 class="text-2xl font-black text-[#1e3a8a] text-center mb-6 uppercase tracking-tighter">Login</h2>
             <div class="space-y-4">
-                <input type="text" id="userName" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:border-[#1e3a8a]" placeholder="Full Name">
-                <input type="tel" id="userMobile" maxlength="10" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:border-[#1e3a8a]" placeholder="Mobile Number">
-                <select id="userDistrict" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none appearance-none cursor-pointer">
+                <input type="text" id="userName" class="w-full p-4 bg-gray-50 rounded-2xl outline-none border border-transparent focus:border-blue-500" placeholder="Student Name">
+                <input type="tel" id="userMobile" maxlength="10" class="w-full p-4 bg-gray-50 rounded-2xl outline-none border border-transparent focus:border-blue-500" placeholder="Mobile Number">
+                <select id="userDistrict" class="w-full p-4 bg-gray-50 rounded-2xl outline-none border border-transparent focus:border-blue-500 appearance-none cursor-pointer">
                     <option value="">Select District</option>
                 </select>
-                <button onclick="startQuiz()" class="w-full bg-[#1e3a8a] text-white py-4 rounded-2xl font-bold shadow-lg transform active:scale-95 transition-all">ENTER QUIZ</button>
+                <button onclick="startQuiz()" class="w-full bg-[#1e3a8a] text-white py-4 rounded-2xl font-black shadow-lg active:scale-95 transition">START ASSESSMENT</button>
             </div>
         </div>
     </div>
 
-    <!-- QUIZ INTERFACE -->
-    <div id="section-quiz" class="hidden min-h-screen p-4 pb-40 bg-white">
-        <!-- Status Dashboard -->
-        <div class="w-full max-w-6xl mx-auto grid grid-cols-4 gap-2 mb-6">
-            <div class="bg-gray-100 p-3 rounded-2xl text-center border border-gray-200">
-                <p class="text-[10px] text-gray-500 font-black uppercase">Total</p>
-                <p id="stat-total" class="text-[#1e3a8a] font-black text-xl">0</p>
+    <div id="section-quiz" class="hidden min-h-screen p-4 pb-48 bg-white">
+        <div class="max-w-4xl mx-auto grid grid-cols-4 gap-2 mb-6">
+            <div class="stat-card"><p class="text-[9px] font-bold text-gray-400 uppercase">Total</p><p id="stat-total" class="font-black">0</p></div>
+            <div class="stat-card"><p class="text-[9px] font-bold text-green-500 uppercase">Done</p><p id="stat-answered" class="font-black text-green-600">0</p></div>
+            <div class="stat-card"><p class="text-[9px] font-bold text-orange-500 uppercase">Skip</p><p id="stat-skipped" class="font-black text-orange-600">0</p></div>
+            <div class="stat-card"><p class="text-[9px] font-bold text-gray-400 uppercase">Left</p><p id="stat-left" class="font-black text-gray-400">0</p></div>
+        </div>
+
+        <div class="max-w-4xl mx-auto space-y-6">
+            <div class="bg-blue-50 rounded-[2.5rem] p-6 md:p-10 border border-blue-100">
+                <div id="img-container" class="hidden mb-4"><img id="q-image" src="" class="max-h-64 mx-auto rounded-2xl shadow-sm bg-white"></div>
+                <h2 id="q-text" class="text-lg md:text-xl font-bold text-gray-800 leading-relaxed"></h2>
             </div>
-            <div class="bg-green-50 p-3 rounded-2xl text-center border border-green-100">
-                <p class="text-[10px] text-green-600 font-black uppercase">Answered</p>
-                <p id="stat-answered" class="text-green-600 font-black text-xl">0</p>
-            </div>
-            <div class="bg-orange-50 p-3 rounded-2xl text-center border border-orange-100">
-                <p class="text-[10px] text-orange-600 font-black uppercase">Skipped</p>
-                <p id="stat-skipped" class="text-orange-600 font-black text-xl">0</p>
-            </div>
-            <div class="bg-gray-50 p-3 rounded-2xl text-center border border-gray-200">
-                <p class="text-[10px] text-gray-400 font-black uppercase">Left</p>
-                <p id="stat-left" class="text-gray-400 font-black text-xl">0</p>
+            <div id="options-list" class="space-y-3"></div>
+            <div class="bg-gray-50 p-6 rounded-[2rem] border border-gray-100">
+                <p class="text-[10px] font-black text-gray-400 uppercase mb-4 tracking-widest">Question Palette</p>
+                <div id="question-palette" class="flex flex-wrap gap-2"></div>
             </div>
         </div>
 
-        <div class="w-full max-w-6xl mx-auto flex flex-col lg:flex-row gap-6 px-2 mb-8">
-            <div class="flex-1 bg-gray-50 rounded-[2.5rem] lg:rounded-[3.5rem] p-6 lg:p-12 border border-gray-100 shadow-sm self-start text-left">
-                <div id="img-container" class="hidden mb-6 rounded-3xl overflow-hidden border-4 border-white shadow-md bg-white">
-                    <img id="q-image" src="" class="w-full h-48 lg:h-72 object-contain">
-                </div>
-                <h2 id="q-text" class="text-lg lg:text-xl font-bold text-gray-800 leading-tight"></h2>
-            </div>
-            <div id="options-list" class="flex-1 space-y-3"></div>
-        </div>
-
-        <!-- Question Palette -->
-        <div class="w-full max-w-6xl mx-auto bg-gray-50 p-6 rounded-[2.5rem] border border-gray-100 mb-8">
-            <p class="text-gray-400 text-[10px] font-black uppercase mb-4 tracking-widest">Question Navigator</p>
-            <div id="question-palette" class="flex flex-wrap gap-2"></div>
-        </div>
-
-        <!-- Sticky Controls -->
         <div class="fixed bottom-0 left-0 right-0 p-4 flex justify-center z-40">
-            <div class="w-full max-w-lg glass-nav rounded-[2rem] p-3 flex justify-between gap-2 shadow-2xl">
-                <button onclick="prevQuestion()" class="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold text-xs uppercase transition">Prev</button>
-                <button onclick="skipQuestion()" class="flex-1 py-4 bg-orange-100 text-orange-600 rounded-2xl font-bold text-xs uppercase border border-orange-200 transition">Skip</button>
-                <button id="btn-main" onclick="nextOrPreview()" class="flex-[2] py-4 bg-cyan-400 text-[#1e3a8a] rounded-2xl font-black text-xs shadow-lg uppercase transition">Next</button>
+            <div class="w-full max-w-lg glass-nav rounded-3xl p-3 flex justify-between gap-2 shadow-2xl">
+                <button onclick="prevQuestion()" class="flex-1 py-4 bg-gray-100 text-gray-500 rounded-2xl font-bold text-xs">PREV</button>
+                <button onclick="skipQuestion()" class="flex-1 py-4 bg-orange-100 text-orange-600 rounded-2xl font-bold text-xs">SKIP</button>
+                <button id="btn-main" onclick="nextOrPreview()" class="flex-[2] py-4 bg-cyan-400 text-[#1e3a8a] rounded-2xl font-black text-xs">NEXT</button>
             </div>
         </div>
     </div>
 
-    <!-- SUCCESS SECTION -->
-    <div id="section-success" class="hidden flex flex-col items-center justify-center min-h-screen p-4 bg-gray-100">
-        <div class="w-full max-w-3xl bg-white rounded-[3rem] p-8 lg:p-12 shadow-2xl text-center overflow-hidden">
-            <div class="inline-block p-6 rounded-full bg-green-50 mb-4">
-                <span id="display-score" class="text-5xl font-black text-green-600">0/0</span>
-                <p class="text-[10px] font-bold text-green-700 uppercase mt-2 font-black tracking-widest">Final Score</p>
-            </div>
-            <h2 class="text-2xl font-black text-gray-800 mb-2 uppercase">Quiz Completed!</h2>
-            <p id="performance-msg" class="text-sm text-gray-500 font-medium mb-6 px-4"></p>
-            <div class="text-left mb-8">
-                <h3 class="text-xs font-black text-[#1e3a8a] uppercase mb-4 border-b pb-2 tracking-widest">Review Your Answers</h3>
-                <div id="result-summary-list" class="space-y-4 custom-scrollbar px-1"></div>
-            </div>
-            <button onclick="location.reload()" class="bg-[#1e3a8a] text-white px-6 py-3 rounded-xl font-black text-xs uppercase shadow-md">Close Session</button>
+    <div id="section-success" class="hidden min-h-screen p-4 flex items-center justify-center">
+        <div class="max-w-md w-full bg-white p-8 rounded-[3rem] shadow-2xl text-center border-t-8 border-green-500">
+             <h2 class="text-5xl font-black text-green-600 mb-2" id="display-score">0/0</h2>
+             <p class="text-sm font-bold text-gray-500 mb-6 uppercase tracking-widest">Assessment Completed</p>
+             <button onclick="location.reload()" class="w-full bg-gray-100 p-4 rounded-2xl font-bold">CLOSE SESSION</button>
         </div>
     </div>
 
@@ -190,7 +112,6 @@
             appId: "1:808928665241:web:5a8a9e3f4ee5b885c9a208",
             measurementId: "G-L059C061EY"
         };
-
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         window.db = db; window.collection = collection; window.getDocs = getDocs; window.addDoc = addDoc; window.query = query; window.orderBy = orderBy;
@@ -198,80 +119,65 @@
 
     <script>
         const tnDistricts = ["Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kancheepuram", "Kanniyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivagangai", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"];
-        let questions = [];
-        let currentIdx = 0;
-        let answers = []; 
-        let skipped = []; 
+        let questions = []; let currentIdx = 0; let answers = []; let skipped = [];
 
-        function initPortal() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const quizId = urlParams.get('id');
-            const displayId = quizId ? quizId.replace(/_/g, ' ') : "SSLC MATHS 2026";
-            document.getElementById('display-subject').innerText = displayId;
-            const distSelect = document.getElementById('userDistrict');
-            if(distSelect && distSelect.options.length <= 1) { tnDistricts.forEach(d => distSelect.add(new Option(d, d))); }
+        // --- THE ALTERNATIVE LOGIC: TAMIL PROTECTOR ---
+        function renderSafeText(text) {
+            if (!text) return "";
+            // Replace \text{...} with a protected HTML span before MathJax sees it
+            // This prevents MathJax from splitting Tamil characters
+            let processed = text.replace(/\\text\{([^\}]+)\}/g, '<span class="tamil-fix">$1</span>');
+            return processed;
         }
 
-        if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", initPortal); } else { initPortal(); }
+        document.addEventListener("DOMContentLoaded", () => {
+            const quizId = new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026";
+            document.getElementById('display-subject').innerText = quizId.replace(/_/g, ' ');
+            const distSelect = document.getElementById('userDistrict');
+            tnDistricts.forEach(d => distSelect.add(new Option(d, d)));
+        });
 
         async function startQuiz() {
             const name = document.getElementById('userName').value.trim();
             const mobile = document.getElementById('userMobile').value.trim();
             const dist = document.getElementById('userDistrict').value;
-            if(!name || mobile.length !== 10 || !dist) return alert("Fill all details correctly.");
+            if(!name || mobile.length !== 10 || !dist) return alert("Enter valid Name, 10-digit Mobile and District.");
 
             try {
-                const quizId = new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026"; 
-                const querySnapshot = await window.getDocs(window.query(window.collection(window.db, "quizzes", quizId, "questions"), window.orderBy("qno")));
-                questions = querySnapshot.docs.map(doc => doc.data());
+                const qId = new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026";
+                const qSnap = await window.getDocs(window.query(window.collection(window.db, "quizzes", qId, "questions"), window.orderBy("qno")));
+                questions = qSnap.docs.map(doc => doc.data());
                 answers = new Array(questions.length).fill(null);
                 skipped = new Array(questions.length).fill(false);
                 document.getElementById('section-reg').classList.add('hidden');
                 document.getElementById('section-quiz').classList.remove('hidden');
                 showQuestion();
-            } catch (e) { alert("Error connecting to database."); }
-        }
-
-        function updatePalette() {
-            const palette = document.getElementById('question-palette');
-            palette.innerHTML = '';
-            let ansCount = 0; let skipCount = 0;
-            questions.forEach((_, i) => {
-                const btn = document.createElement('button');
-                btn.innerText = i + 1;
-                let s = 'p-unanswered';
-                if (answers[i] !== null) { s = 'p-answered'; ansCount++; } 
-                else if (skipped[i]) { s = 'p-skipped'; skipCount++; }
-                btn.className = `palette-btn ${s} ${i === currentIdx ? 'p-current' : ''}`;
-                btn.onclick = () => { currentIdx = i; showQuestion(); };
-                palette.appendChild(btn);
-            });
-            document.getElementById('stat-total').innerText = questions.length;
-            document.getElementById('stat-answered').innerText = ansCount;
-            document.getElementById('stat-skipped').innerText = skipCount;
-            document.getElementById('stat-left').innerText = questions.length - ansCount - skipCount;
+            } catch (e) { alert("Load Error."); }
         }
 
         function showQuestion() {
             const q = questions[currentIdx];
-            document.getElementById('q-text').innerHTML = q.question;
+            // Step 1: Inject Processed Text (Tamil Safe)
+            document.getElementById('q-text').innerHTML = renderSafeText(q.question);
+            
             const qImg = document.getElementById('q-image');
-            if(q.imageUrl && q.imageUrl.trim() !== "") { 
-                qImg.src = q.imageUrl; document.getElementById('img-container').classList.remove('hidden'); 
-            } else { document.getElementById('img-container').classList.add('hidden'); }
+            if(q.imageUrl) { qImg.src = q.imageUrl; document.getElementById('img-container').classList.remove('hidden'); }
+            else { document.getElementById('img-container').classList.add('hidden'); }
 
             const list = document.getElementById('options-list');
             list.innerHTML = '';
             q.options.forEach((opt, i) => {
                 const btn = document.createElement('button');
-                btn.className = `w-full p-4 flex items-start bg-white border-2 rounded-2xl text-left ${answers[currentIdx] === i ? 'option-selected border-green-500' : 'border-gray-200'}`;
-                btn.innerHTML = `<span class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-[#1e3a8a] text-white rounded-full text-[10px] font-black mr-4">${['A','B','C','D'][i]}</span><div class="flex-grow">${opt}</div>`;
+                btn.className = `w-full p-4 flex items-center bg-white border-2 rounded-2xl text-left transition ${answers[currentIdx] === i ? 'option-selected' : 'border-gray-100'}`;
+                btn.innerHTML = `<span class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-[#1e3a8a] text-white rounded-full text-[10px] font-black mr-4">${['A','B','C','D'][i]}</span><div class="flex-grow font-bold text-gray-700">${renderSafeText(opt)}</div>`;
                 btn.onclick = () => { answers[currentIdx] = i; skipped[currentIdx] = false; showQuestion(); };
                 list.appendChild(btn);
             });
 
             document.getElementById('btn-main').innerText = (currentIdx === questions.length - 1) ? "PREVIEW" : "NEXT";
             updatePalette();
+            
+            // Step 2: Trigger MathJax only after Tamil is safe
             if (window.MathJax && window.MathJax.typesetPromise) window.MathJax.typesetPromise();
         }
 
@@ -281,54 +187,48 @@
         }
 
         function nextOrPreview() {
-            if(currentIdx < questions.length - 1) { currentIdx++; showQuestion(); } else { showPreview(); }
+            if (currentIdx < questions.length - 1) { currentIdx++; showQuestion(); } else { finalSubmitDirect(); }
         }
 
         function prevQuestion() { if(currentIdx > 0) { currentIdx--; showQuestion(); } }
 
-        function showPreview() {
-            const cont = document.getElementById('preview-content');
-            cont.innerHTML = '';
-            questions.forEach((q, i) => {
-                let selectionText = answers[i] !== null ? q.options[answers[i]] : (skipped[i] ? "SKIPPED" : "NOT ANSWERED");
-                cont.innerHTML += `<div class="p-4 bg-gray-50 rounded-2xl border mb-2"><p class="text-[10px] font-black opacity-40">Q${i+1}</p><p class="text-sm font-bold">${q.question}</p><p class="text-sm text-blue-800">${selectionText}</p></div>`;
+        function updatePalette() {
+            const palette = document.getElementById('question-palette');
+            palette.innerHTML = '';
+            let ans = 0; let skp = 0;
+            questions.forEach((_, i) => {
+                const btn = document.createElement('button');
+                btn.innerText = i + 1;
+                let s = 'p-unanswered';
+                if (answers[i] !== null) { s = 'p-answered'; ans++; } 
+                else if (skipped[i]) { s = 'p-skipped'; skp++; }
+                btn.className = `palette-btn ${s} ${i === currentIdx ? 'p-current' : ''}`;
+                btn.onclick = () => { currentIdx = i; showQuestion(); };
+                palette.appendChild(btn);
             });
-            document.getElementById('preview-modal').classList.remove('hidden');
-            if (window.MathJax) window.MathJax.typesetPromise();
+            document.getElementById('stat-total').innerText = questions.length;
+            document.getElementById('stat-answered').innerText = ans;
+            document.getElementById('stat-skipped').innerText = skp;
+            document.getElementById('stat-left').innerText = questions.length - ans - skp;
         }
 
-        async function finalFinish() {
-            const btn = event.target; btn.disabled = true; btn.innerText = "SUBMITTING...";
+        async function finalSubmitDirect() {
+            const quizId = new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026";
             let score = 0;
-            const summaryList = document.getElementById('result-summary-list');
-            summaryList.innerHTML = ''; 
+            answers.forEach((ans, i) => { if(ans === parseInt(questions[i].correctIndex)) score++; });
 
-            questions.forEach((q, i) => {
-                const isCorrect = answers[i] === parseInt(q.correctIndex);
-                if (isCorrect) score++;
-                const item = document.createElement('div');
-                item.className = `p-4 rounded-2xl border-2 mb-3 ${isCorrect ? 'border-green-100 bg-green-50' : 'border-red-100 bg-red-50'}`;
-                item.innerHTML = `
-                    <div class="flex justify-between mb-1"><span class="text-[10px] font-black uppercase ${isCorrect ? 'text-green-600' : 'text-red-600'}">Question ${i + 1}</span></div>
-                    <p class="text-sm font-bold text-gray-800 mb-2">${q.question}</p>
-                    <div class="text-xs font-bold"><p>Your Answer: ${answers[i] !== null ? q.options[answers[i]] : 'None'}</p>
-                    ${!isCorrect ? `<p class="text-green-700 border-t pt-1 mt-1 font-bold">Correct: ${q.options[q.correctIndex]}</p>` : ''}</div>`;
-                summaryList.appendChild(item);
-            });
+            const res = {
+                name: document.getElementById('userName').value, mobile: document.getElementById('userMobile').value,
+                dist: document.getElementById('userDistrict').value, quizId: quizId,
+                score: score, total: questions.length, timestamp: new Date()
+            };
 
             try {
-                await window.addDoc(window.collection(window.db, "results"), {
-                    name: document.getElementById('userName').value, mobile: document.getElementById('userMobile').value,
-                    dist: document.getElementById('userDistrict').value,
-                    quizId: new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026",
-                    score, total: questions.length, timestamp: new Date()
-                });
+                await window.addDoc(window.collection(window.db, "results"), res);
                 document.getElementById('display-score').innerText = `${score}/${questions.length}`;
                 document.getElementById('section-quiz').classList.add('hidden');
                 document.getElementById('section-success').classList.remove('hidden');
-                window.scrollTo(0, 0);
-                if (window.MathJax) window.MathJax.typesetPromise();
-            } catch (e) { alert("Submission error."); btn.disabled = false; }
+            } catch (e) { alert("Sync Error."); }
         }
     </script>
 </body>
