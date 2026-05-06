@@ -7,56 +7,50 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <script>
-  window.MathJax = {
-    tex: {
-      inlineMath: [['$', '$'], ['\\(', '\\)']],
-      processEscapes: true
-    },
-    options: {
-      // This prevents MathJax from trying to "fix" Tamil text layout
-      skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
-      ignoreHtmlClass: 'tex2jax_ignore',
-      processHtmlClass: 'tex2jax_process'
-    }
-  };
-</script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          processEscapes: true
+        },
+        options: {
+          skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+          ignoreHtmlClass: 'tex2jax_ignore',
+          processHtmlClass: 'tex2jax_process'
+        }
+      };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
- <style>
+    <style>
         /* 1. Core Typography & Tamil Rendering Fixes */
         body { 
             -webkit-tap-highlight-color: transparent; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            -webkit-font-smoothing: antialiased;
         }
         
-        /* Forces Tamil text to stay together (Ligature Fix) */
         #q-text, .option-text, .preview-text { 
             white-space: pre-wrap; 
             text-align: left !important;
             word-wrap: break-word;
             line-height: 1.6;
-            font-family: 'Segoe UI', 'Latha', 'Tamil Sangam MN', sans-serif !important;
         }
 
         /* Specifically targets distorted MathJax Tamil characters */
         mjx-utext {
             font-family: 'Segoe UI', 'Arial', sans-serif !important;
             font-style: normal !important;
-            line-height: normal;
         }
 
         /* 2. Interactive Elements */
         .option-selected { 
             background-color: #bbf7d0 !important; 
             border-color: #22c55e !important; 
-            transform: scale(1.01);
         }
 
         .glass-nav { 
-            background: rgba(255, 255, 255, 0.9); 
+            background: rgba(255, 255, 255, 0.95); 
             backdrop-filter: blur(12px); 
-            -webkit-backdrop-filter: blur(12px);
-            border-top: 1px solid rgba(229, 231, 235, 0.5);
+            border-top: 1px solid #e5e7eb;
         }
 
         /* 3. Question Palette (Navigation) */
@@ -69,37 +63,26 @@
             border-radius: 10px; 
             font-size: 13px; 
             font-weight: 800; 
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+            transition: all 0.2s; 
             border: 2px solid transparent; 
         }
         
         .p-unanswered { background-color: #f3f4f6; color: #9ca3af; border-color: #e5e7eb; }
-        .p-answered { background-color: #22c55e; color: white; box-shadow: 0 2px 4px rgba(34, 197, 94, 0.2); }
-        .p-skipped { background-color: #f59e0b; color: white; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2); }
+        .p-answered { background-color: #22c55e; color: white; }
+        .p-skipped { background-color: #f59e0b; color: white; }
         
-        /* Current Active Question Highlight */
         .p-current { 
             border-color: #1e3a8a; 
             background-color: white;
             color: #1e3a8a;
             box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1e3a8a; 
-            transform: translateY(-2px);
         }
 
-        /* 4. Scrollbars & Layout */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e3a8a; border-radius: 10px; }
 
-        #result-summary-list { 
-            max-height: 450px; 
-            overflow-y: auto; 
-            padding-right: 8px; 
-            scroll-behavior: smooth;
-        }
-
-        /* MathJax Loading protection */
-        .mjx-chtml { outline: none !important; }
+        #result-summary-list { max-height: 450px; overflow-y: auto; padding-right: 8px; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans antialiased min-h-screen">
@@ -124,8 +107,8 @@
         </div>
     </div>
 
-    <!-- QUIZ INTERFACE - UPDATED TO WHITE BACKGROUND -->
-    <div id="section-quiz" class="hidden min-h-screen p-4 pb-32 bg-white">
+    <!-- QUIZ INTERFACE -->
+    <div id="section-quiz" class="hidden min-h-screen p-4 pb-40 bg-white">
         <!-- Status Dashboard -->
         <div class="w-full max-w-6xl mx-auto grid grid-cols-4 gap-2 mb-6">
             <div class="bg-gray-100 p-3 rounded-2xl text-center border border-gray-200">
@@ -141,7 +124,7 @@
                 <p id="stat-skipped" class="text-orange-600 font-black text-xl">0</p>
             </div>
             <div class="bg-gray-50 p-3 rounded-2xl text-center border border-gray-200">
-                <p class="text-[10px] text-gray-400 font-black uppercase">Remaining</p>
+                <p class="text-[10px] text-gray-400 font-black uppercase">Left</p>
                 <p id="stat-left" class="text-gray-400 font-black text-xl">0</p>
             </div>
         </div>
@@ -157,17 +140,17 @@
         </div>
 
         <!-- Question Palette -->
-        <div class="w-full max-w-6xl mx-auto bg-gray-50 p-6 rounded-[2.5rem] border border-gray-100">
+        <div class="w-full max-w-6xl mx-auto bg-gray-50 p-6 rounded-[2.5rem] border border-gray-100 mb-8">
             <p class="text-gray-400 text-[10px] font-black uppercase mb-4 tracking-widest">Question Navigator</p>
             <div id="question-palette" class="flex flex-wrap gap-2"></div>
         </div>
 
         <!-- Sticky Controls -->
         <div class="fixed bottom-0 left-0 right-0 p-4 flex justify-center z-40">
-            <div class="w-full max-w-lg glass-nav rounded-[2rem] p-3 flex justify-between gap-2 shadow-2xl border border-gray-200">
-                <button onclick="prevQuestion()" class="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold text-xs uppercase hover:bg-gray-200 transition">Prev</button>
-                <button onclick="skipQuestion()" class="flex-1 py-4 bg-orange-100 text-orange-600 rounded-2xl font-bold text-xs uppercase hover:bg-orange-200 transition border border-orange-200">Skip</button>
-                <button id="btn-main" onclick="nextOrPreview()" class="flex-[2] py-4 bg-cyan-400 text-[#1e3a8a] rounded-2xl font-black text-xs shadow-lg uppercase hover:bg-cyan-300 transition">Next</button>
+            <div class="w-full max-w-lg glass-nav rounded-[2rem] p-3 flex justify-between gap-2 shadow-2xl">
+                <button onclick="prevQuestion()" class="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold text-xs uppercase transition">Prev</button>
+                <button onclick="skipQuestion()" class="flex-1 py-4 bg-orange-100 text-orange-600 rounded-2xl font-bold text-xs uppercase border border-orange-200 transition">Skip</button>
+                <button id="btn-main" onclick="nextOrPreview()" class="flex-[2] py-4 bg-cyan-400 text-[#1e3a8a] rounded-2xl font-black text-xs shadow-lg uppercase transition">Next</button>
             </div>
         </div>
     </div>
@@ -255,7 +238,7 @@
             const name = document.getElementById('userName').value.trim();
             const mobile = document.getElementById('userMobile').value.trim();
             const dist = document.getElementById('userDistrict').value;
-            if(!name || mobile.length !== 10 || !dist) return alert("Please enter Name, 10-digit Mobile, and District.");
+            if(!name || mobile.length !== 10 || !dist) return alert("Please fill all details correctly.");
 
             try {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -264,7 +247,8 @@
                 const qQuery = window.query(qRef, window.orderBy("qno"));
                 const querySnapshot = await window.getDocs(qQuery);
                 questions = querySnapshot.docs.map(doc => doc.data());
-                if(questions.length === 0) return alert("Quiz not found.");
+                
+                if(questions.length === 0) return alert("Quiz data not found.");
                 
                 answers = new Array(questions.length).fill(null);
                 skipped = new Array(questions.length).fill(false);
@@ -273,7 +257,7 @@
                 document.getElementById('section-quiz').classList.remove('hidden');
                 updatePalette();
                 showQuestion();
-            } catch (e) { alert("Database Error."); }
+            } catch (e) { alert("Error connecting to database."); }
         }
 
         function updatePalette() {
@@ -312,7 +296,11 @@
             document.getElementById('q-text').innerHTML = q.question;
             const qImg = document.getElementById('q-image');
             const imgCont = document.getElementById('img-container');
-            if(q.imageUrl && q.imageUrl.trim() !== "") { qImg.src = q.imageUrl; imgCont.classList.remove('hidden'); } else { imgCont.classList.add('hidden'); }
+            
+            if(q.imageUrl && q.imageUrl.trim() !== "") { 
+                qImg.src = q.imageUrl; 
+                imgCont.classList.remove('hidden'); 
+            } else { imgCont.classList.add('hidden'); }
 
             const list = document.getElementById('options-list');
             list.innerHTML = '';
@@ -333,7 +321,7 @@
 
             document.getElementById('btn-main').innerText = (currentIdx === questions.length - 1) ? "PREVIEW" : "NEXT";
             updatePalette();
-            if (window.MathJax) MathJax.typesetPromise();
+            if (window.MathJax) window.MathJax.typesetPromise();
         }
 
         function skipQuestion() {
@@ -341,18 +329,14 @@
             if (currentIdx < questions.length - 1) {
                 currentIdx++;
                 showQuestion();
-            } else {
-                updatePalette();
-            }
+            } else { updatePalette(); }
         }
 
         function nextOrPreview() {
             if(currentIdx < questions.length - 1) {
                 currentIdx++;
                 showQuestion();
-            } else {
-                showPreview();
-            }
+            } else { showPreview(); }
         }
 
         function prevQuestion() { if(currentIdx > 0) { currentIdx--; showQuestion(); } }
@@ -362,7 +346,7 @@
             cont.innerHTML = '';
             questions.forEach((q, i) => {
                 let selectionText = answers[i] !== null ? q.options[answers[i]] : (skipped[i] ? "SKIPPED" : "NOT ANSWERED");
-                let colorClass = answers[i] !== null ? "text-[#1e3a8a]" : "text-orange-500";
+                let colorClass = answers[i] !== null ? "text-[#1e3a8a]" : "text-orange-600";
                 
                 cont.innerHTML += `<div class="p-4 bg-gray-50 rounded-2xl border border-gray-100 text-left">
                     <p class="text-[10px] font-black text-gray-400 uppercase">Q${i+1}</p>
@@ -371,7 +355,7 @@
                 </div>`;
             });
             document.getElementById('preview-modal').classList.remove('hidden');
-            if (window.MathJax) MathJax.typesetPromise();
+            if (window.MathJax) window.MathJax.typesetPromise();
         }
 
         function closePreview() { document.getElementById('preview-modal').classList.add('hidden'); }
@@ -411,7 +395,7 @@
             });
 
             const urlParams = new URLSearchParams(window.location.search);
-            const res = {
+            const resData = {
                 name: document.getElementById('userName').value,
                 mobile: document.getElementById('userMobile').value,
                 district: document.getElementById('userDistrict').value,
@@ -421,13 +405,14 @@
             };
 
             try {
-                await window.addDoc(window.collection(window.db, "results"), res);
+                await window.addDoc(window.collection(window.db, "results"), resData);
                 document.getElementById('display-score').innerText = `${score}/${questions.length}`;
-                document.getElementById('success-name').innerText = res.name;
-                document.getElementById('success-mobile').innerText = `ID: ${res.mobile}`;
+                document.getElementById('success-name').innerText = resData.name;
+                document.getElementById('success-mobile').innerText = `ID: ${resData.mobile}`;
                 document.getElementById('section-feedback').classList.add('hidden');
                 document.getElementById('section-success').classList.remove('hidden');
                 window.scrollTo(0, 0);
+                if (window.MathJax) window.MathJax.typesetPromise();
             } catch (e) { alert("Submission error."); submitBtn.disabled = false; }
         }
     </script>
