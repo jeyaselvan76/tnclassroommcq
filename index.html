@@ -15,23 +15,18 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        body { -webkit-tap-highlight-color: transparent; font-family: sans-serif; background-color: white; }
+        body { -webkit-tap-highlight-color: transparent; font-family: sans-serif; background-color: #f8fafc; }
         
-        /* THE PROTECTIVE CLASS: This forces the browser to render Tamil ligatures correctly */
         .tamil-fix {
             font-family: 'Segoe UI', 'Latha', 'Tamil Sangam MN', sans-serif !important;
             display: inline-block !important;
-            white-space: nowrap !important;
+            white-space: normal !important;
             font-style: normal !important;
             font-weight: 600 !important;
-            padding: 0 2px;
-            color: #1e3a8a; /* Navy blue for formulas */
+            color: #1e3a8a;
         }
 
-        /* Styling for the status chips */
-        .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 10px; text-align: center; }
-        
-        /* Navigator Palette */
+        .stat-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 10px; text-align: center; }
         .palette-btn { width: 35px; height: 35px; border-radius: 8px; font-weight: 800; font-size: 12px; transition: 0.2s; }
         .p-unanswered { background: #f1f5f9; color: #94a3b8; }
         .p-answered { background: #22c55e; color: white; }
@@ -48,6 +43,7 @@
         <span id="display-subject" class="text-[#1e3a8a] font-black text-[10px] tracking-widest uppercase">www.tnclassroom.com</span>
     </div>
 
+    <!-- 1. LOGIN SECTION -->
     <div id="section-reg" class="flex items-center justify-center min-h-[85vh] p-4">
         <div class="w-full max-w-md bg-white rounded-[2.5rem] p-8 shadow-2xl border-t-8 border-[#1e3a8a]">
             <h2 class="text-2xl font-black text-[#1e3a8a] text-center mb-6 uppercase tracking-tighter">Login</h2>
@@ -62,12 +58,13 @@
         </div>
     </div>
 
+    <!-- 2. QUIZ SECTION -->
     <div id="section-quiz" class="hidden min-h-screen p-4 pb-48 bg-white">
-        <div class="max-w-4xl mx-auto grid grid-cols-4 gap-2 mb-6">
-            <div class="stat-card"><p class="text-[9px] font-bold text-gray-400 uppercase">Total</p><p id="stat-total" class="font-black">0</p></div>
+        <div class="max-w-4xl mx-auto grid grid-cols-4 gap-2 mb-6 text-slate-600">
+            <div class="stat-card"><p class="text-[9px] font-bold uppercase">Total</p><p id="stat-total" class="font-black">0</p></div>
             <div class="stat-card"><p class="text-[9px] font-bold text-green-500 uppercase">Done</p><p id="stat-answered" class="font-black text-green-600">0</p></div>
             <div class="stat-card"><p class="text-[9px] font-bold text-orange-500 uppercase">Skip</p><p id="stat-skipped" class="font-black text-orange-600">0</p></div>
-            <div class="stat-card"><p class="text-[9px] font-bold text-gray-400 uppercase">Left</p><p id="stat-left" class="font-black text-gray-400">0</p></div>
+            <div class="stat-card"><p class="text-[9px] font-bold uppercase">Left</p><p id="stat-left" class="font-black">0</p></div>
         </div>
 
         <div class="max-w-4xl mx-auto space-y-6">
@@ -86,16 +83,35 @@
             <div class="w-full max-w-lg glass-nav rounded-3xl p-3 flex justify-between gap-2 shadow-2xl">
                 <button onclick="prevQuestion()" class="flex-1 py-4 bg-gray-100 text-gray-500 rounded-2xl font-bold text-xs">PREV</button>
                 <button onclick="skipQuestion()" class="flex-1 py-4 bg-orange-100 text-orange-600 rounded-2xl font-bold text-xs">SKIP</button>
-                <button id="btn-main" onclick="nextOrPreview()" class="flex-[2] py-4 bg-cyan-400 text-[#1e3a8a] rounded-2xl font-black text-xs">NEXT</button>
+                <button id="btn-main" onclick="nextOrPreview()" class="flex-[2] py-4 bg-cyan-400 text-[#1e3a8a] rounded-2xl font-black text-xs uppercase">Next</button>
             </div>
         </div>
     </div>
 
-    <div id="section-success" class="hidden min-h-screen p-4 flex items-center justify-center">
-        <div class="max-w-md w-full bg-white p-8 rounded-[3rem] shadow-2xl text-center border-t-8 border-green-500">
-             <h2 class="text-5xl font-black text-green-600 mb-2" id="display-score">0/0</h2>
-             <p class="text-sm font-bold text-gray-500 mb-6 uppercase tracking-widest">Assessment Completed</p>
-             <button onclick="location.reload()" class="w-full bg-gray-100 p-4 rounded-2xl font-bold">CLOSE SESSION</button>
+    <!-- 3. PREVIEW SECTION -->
+    <div id="section-preview" class="hidden min-h-screen p-4 bg-gray-50 pb-32">
+        <div class="max-w-2xl mx-auto">
+            <h2 class="text-2xl font-black text-[#1e3a8a] mb-6 uppercase text-center">Review Answers</h2>
+            <div id="summary-list" class="space-y-3 mb-6"></div>
+            <div class="fixed bottom-0 left-0 right-0 p-6 bg-white border-t flex gap-3 z-50">
+                <button onclick="backToQuiz()" class="flex-1 py-4 bg-gray-200 rounded-2xl font-black uppercase text-xs">Go Back</button>
+                <button id="final-submit-btn" onclick="finalSubmitDirect()" class="flex-[2] py-4 rounded-2xl font-black text-white uppercase text-xs">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. SUCCESS/RESULT SECTION -->
+    <div id="section-success" class="hidden min-h-screen p-4 bg-white">
+        <div class="max-w-3xl mx-auto py-10">
+            <div class="text-center mb-10">
+                <h2 class="text-6xl font-black text-green-600 mb-2" id="display-score">0/0</h2>
+                <p class="text-sm font-bold text-gray-500 uppercase tracking-widest">Assessment Completed</p>
+            </div>
+            
+            <h3 class="font-black text-gray-800 mb-4 uppercase text-sm border-b pb-2">Correction Sheet</h3>
+            <div id="correction-list" class="space-y-6 mb-10"></div>
+            
+            <button onclick="location.reload()" class="w-full bg-gray-900 text-white p-5 rounded-2xl font-black shadow-xl">CLOSE SESSION</button>
         </div>
     </div>
 
@@ -121,13 +137,9 @@
         const tnDistricts = ["Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kancheepuram", "Kanniyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivagangai", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"];
         let questions = []; let currentIdx = 0; let answers = []; let skipped = [];
 
-        // --- THE ALTERNATIVE LOGIC: TAMIL PROTECTOR ---
         function renderSafeText(text) {
             if (!text) return "";
-            // Replace \text{...} with a protected HTML span before MathJax sees it
-            // This prevents MathJax from splitting Tamil characters
-            let processed = text.replace(/\\text\{([^\}]+)\}/g, '<span class="tamil-fix">$1</span>');
-            return processed;
+            return text.replace(/\\text\{([^\}]+)\}/g, '<span class="tamil-fix">$1</span>');
         }
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -157,7 +169,6 @@
 
         function showQuestion() {
             const q = questions[currentIdx];
-            // Step 1: Inject Processed Text (Tamil Safe)
             document.getElementById('q-text').innerHTML = renderSafeText(q.question);
             
             const qImg = document.getElementById('q-image');
@@ -174,20 +185,19 @@
                 list.appendChild(btn);
             });
 
-            document.getElementById('btn-main').innerText = (currentIdx === questions.length - 1) ? "PREVIEW" : "NEXT";
+            document.getElementById('btn-main').innerText = (currentIdx === questions.length - 1) ? "Preview" : "Next";
             updatePalette();
-            
-            // Step 2: Trigger MathJax only after Tamil is safe
             if (window.MathJax && window.MathJax.typesetPromise) window.MathJax.typesetPromise();
         }
 
         function skipQuestion() {
             if (answers[currentIdx] === null) skipped[currentIdx] = true;
-            if (currentIdx < questions.length - 1) { currentIdx++; showQuestion(); } else { updatePalette(); }
+            if (currentIdx < questions.length - 1) { currentIdx++; showQuestion(); } else { showPreview(); }
         }
 
         function nextOrPreview() {
-            if (currentIdx < questions.length - 1) { currentIdx++; showQuestion(); } else { finalSubmitDirect(); }
+            if (currentIdx < questions.length - 1) { currentIdx++; showQuestion(); } 
+            else { showPreview(); }
         }
 
         function prevQuestion() { if(currentIdx > 0) { currentIdx--; showQuestion(); } }
@@ -212,10 +222,82 @@
             document.getElementById('stat-left').innerText = questions.length - ans - skp;
         }
 
+        /* --- NEW PREVIEW LOGIC --- */
+        function showPreview() {
+            document.getElementById('section-quiz').classList.add('hidden');
+            document.getElementById('section-preview').classList.remove('hidden');
+            
+            const summary = document.getElementById('summary-list');
+            summary.innerHTML = '';
+            
+            let allAnswered = true;
+            questions.forEach((q, i) => {
+                const isAns = answers[i] !== null;
+                if(!isAns) allAnswered = false;
+
+                const div = document.createElement('div');
+                div.className = "p-4 bg-white rounded-xl border border-gray-200 flex justify-between items-center";
+                div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="w-8 h-8 bg-slate-100 flex items-center justify-center rounded-lg font-black text-xs text-slate-500">${i+1}</span>
+                        <span class="text-sm font-bold ${isAns ? 'text-green-600' : 'text-red-500'}">${isAns ? 'ANSWERED' : 'NOT ANSWERED'}</span>
+                    </div>
+                    <button onclick="backToSpecificQ(${i})" class="text-[10px] font-black text-blue-500 bg-blue-50 px-3 py-1 rounded-full uppercase">Edit</button>
+                `;
+                summary.appendChild(div);
+            });
+
+            const submitBtn = document.getElementById('final-submit-btn');
+            if(!allAnswered) {
+                submitBtn.className = "flex-[2] py-4 rounded-2xl font-black text-white uppercase text-xs bg-gray-300 pointer-events-none";
+                submitBtn.innerText = "Answer all to submit";
+            } else {
+                submitBtn.className = "flex-[2] py-4 rounded-2xl font-black text-white uppercase text-xs bg-green-500 shadow-lg active:scale-95";
+                submitBtn.innerText = "Final Submit";
+            }
+        }
+
+        function backToQuiz() {
+            document.getElementById('section-preview').classList.add('hidden');
+            document.getElementById('section-quiz').classList.remove('hidden');
+        }
+
+        function backToSpecificQ(idx) {
+            currentIdx = idx;
+            backToQuiz();
+            showQuestion();
+        }
+
         async function finalSubmitDirect() {
             const quizId = new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026";
             let score = 0;
-            answers.forEach((ans, i) => { if(ans === parseInt(questions[i].correctIndex)) score++; });
+            const correction = document.getElementById('correction-list');
+            correction.innerHTML = '';
+
+            answers.forEach((ans, i) => {
+                const correctIdx = parseInt(questions[i].correctIndex);
+                const isCorrect = (ans === correctIdx);
+                if(isCorrect) score++;
+
+                // Build Correction Cards
+                const card = document.createElement('div');
+                card.className = `p-5 rounded-2xl border-l-8 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`;
+                card.innerHTML = `
+                    <p class="font-bold text-gray-800 mb-3">${renderSafeText(questions[i].question)}</p>
+                    <div class="grid grid-cols-1 gap-2 text-sm">
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-500 font-bold uppercase text-[10px]">Your Answer:</span>
+                            <span class="${isCorrect ? 'text-green-700' : 'text-red-700'} font-black">${renderSafeText(questions[i].options[ans])}</span>
+                        </div>
+                        ${!isCorrect ? `
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-500 font-bold uppercase text-[10px]">Correct Answer:</span>
+                            <span class="text-green-700 font-black">${renderSafeText(questions[i].options[correctIdx])}</span>
+                        </div>` : ''}
+                    </div>
+                `;
+                correction.appendChild(card);
+            });
 
             const res = {
                 name: document.getElementById('userName').value, mobile: document.getElementById('userMobile').value,
@@ -226,8 +308,9 @@
             try {
                 await window.addDoc(window.collection(window.db, "results"), res);
                 document.getElementById('display-score').innerText = `${score}/${questions.length}`;
-                document.getElementById('section-quiz').classList.add('hidden');
+                document.getElementById('section-preview').classList.add('hidden');
                 document.getElementById('section-success').classList.remove('hidden');
+                if (window.MathJax) window.MathJax.typesetPromise();
             } catch (e) { alert("Sync Error."); }
         }
     </script>
