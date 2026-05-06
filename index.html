@@ -28,17 +28,20 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
+        /* Forces Tamil text to stay together and use proper system fonts */
         #q-text, .option-text, .preview-text { 
             white-space: pre-wrap; 
             text-align: left !important;
             word-wrap: break-word;
             line-height: 1.6;
+            font-family: 'Segoe UI', 'Latha', 'Tamil Sangam MN', sans-serif !important;
         }
 
-        /* Specifically targets distorted MathJax Tamil characters */
+        /* Targets distorted MathJax Tamil characters to use standard font rendering */
         mjx-utext {
             font-family: 'Segoe UI', 'Arial', sans-serif !important;
             font-style: normal !important;
+            line-height: normal;
         }
 
         /* 2. Interactive Elements */
@@ -321,7 +324,11 @@
 
             document.getElementById('btn-main').innerText = (currentIdx === questions.length - 1) ? "PREVIEW" : "NEXT";
             updatePalette();
-            if (window.MathJax) window.MathJax.typesetPromise();
+            
+            // Forces MathJax to re-scan for formulas after the question loads
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise();
+            }
         }
 
         function skipQuestion() {
