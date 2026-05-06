@@ -6,11 +6,15 @@
     <title>TNSED MCQ Portal | WWW.TNCLASSROOM.COM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- MATHJAX CONFIGURATION FOR TAMIL FIX -->
     <script>
       window.MathJax = {
         tex: {
           inlineMath: [['$', '$'], ['\\(', '\\)']],
           processEscapes: true
+        },
+        chtml: {
+          adaptiveCSS: false
         },
         options: {
           skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
@@ -22,13 +26,13 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        /* 1. Core Typography & Tamil Rendering Fixes */
+        /* 1. Core Typography & Tamil Ligature Fixes */
         body { 
             -webkit-tap-highlight-color: transparent; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9fafb;
         }
         
-        /* Forces Tamil text to stay together and use proper system fonts */
         #q-text, .option-text, .preview-text { 
             white-space: pre-wrap; 
             text-align: left !important;
@@ -37,11 +41,12 @@
             font-family: 'Segoe UI', 'Latha', 'Tamil Sangam MN', sans-serif !important;
         }
 
-        /* Targets distorted MathJax Tamil characters to use standard font rendering */
+        /* CRITICAL FIX: Prevents MathJax from breaking Tamil letters apart */
         mjx-utext {
-            font-family: 'Segoe UI', 'Arial', sans-serif !important;
+            font-family: 'Segoe UI', 'Latha', sans-serif !important;
             font-style: normal !important;
-            line-height: normal;
+            display: inline-block !important;
+            white-space: nowrap !important;
         }
 
         /* 2. Interactive Elements */
@@ -88,13 +93,13 @@
         #result-summary-list { max-height: 450px; overflow-y: auto; padding-right: 8px; }
     </style>
 </head>
-<body class="bg-gray-100 font-sans antialiased min-h-screen">
+<body class="antialiased min-h-screen">
 
     <div class="w-full py-2 bg-white text-center border-b border-gray-200 sticky top-0 z-50">
         <span class="text-[#1e3a8a] font-black text-xs tracking-widest uppercase">www.tnclassroom.com</span>
     </div>
 
-    <!-- LOGIN SECTION -->
+    <!-- SECTION 1: LOGIN -->
     <div id="section-reg" class="flex items-center justify-center min-h-[90vh] p-4">
         <div class="w-full max-w-md bg-white rounded-[2.5rem] p-8 shadow-2xl border-t-4 border-[#1e3a8a]">
             <h2 class="text-2xl font-black text-[#1e3a8a] text-center mb-1 uppercase tracking-tighter">Login</h2>
@@ -110,7 +115,7 @@
         </div>
     </div>
 
-    <!-- QUIZ INTERFACE -->
+    <!-- SECTION 2: QUIZ INTERFACE -->
     <div id="section-quiz" class="hidden min-h-screen p-4 pb-40 bg-white">
         <!-- Status Dashboard -->
         <div class="w-full max-w-6xl mx-auto grid grid-cols-4 gap-2 mb-6">
@@ -199,6 +204,7 @@
         </div>
     </div>
 
+    <!-- FIREBASE MODULE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -241,7 +247,7 @@
             const name = document.getElementById('userName').value.trim();
             const mobile = document.getElementById('userMobile').value.trim();
             const dist = document.getElementById('userDistrict').value;
-            if(!name || mobile.length !== 10 || !dist) return alert("Please fill all details correctly.");
+            if(!name || mobile.length !== 10 || !dist) return alert("Fill all details correctly.");
 
             try {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -251,7 +257,7 @@
                 const querySnapshot = await window.getDocs(qQuery);
                 questions = querySnapshot.docs.map(doc => doc.data());
                 
-                if(questions.length === 0) return alert("Quiz data not found.");
+                if(questions.length === 0) return alert("Quiz not found.");
                 
                 answers = new Array(questions.length).fill(null);
                 skipped = new Array(questions.length).fill(false);
@@ -266,22 +272,14 @@
         function updatePalette() {
             const palette = document.getElementById('question-palette');
             palette.innerHTML = '';
-            
-            let ansCount = 0;
-            let skipCount = 0;
+            let ansCount = 0; let skipCount = 0;
 
             questions.forEach((_, i) => {
                 const btn = document.createElement('button');
                 btn.innerText = i + 1;
                 let statusClass = 'p-unanswered';
-                
-                if (answers[i] !== null) {
-                    statusClass = 'p-answered';
-                    ansCount++;
-                } else if (skipped[i]) {
-                    statusClass = 'p-skipped';
-                    skipCount++;
-                }
+                if (answers[i] !== null) { statusClass = 'p-answered'; ansCount++; } 
+                else if (skipped[i]) { statusClass = 'p-skipped'; skipCount++; }
 
                 btn.className = `palette-btn ${statusClass} ${i === currentIdx ? 'p-current' : ''}`;
                 btn.onclick = () => { currentIdx = i; showQuestion(); };
@@ -301,8 +299,7 @@
             const imgCont = document.getElementById('img-container');
             
             if(q.imageUrl && q.imageUrl.trim() !== "") { 
-                qImg.src = q.imageUrl; 
-                imgCont.classList.remove('hidden'); 
+                qImg.src = q.imageUrl; imgCont.classList.remove('hidden'); 
             } else { imgCont.classList.add('hidden'); }
 
             const list = document.getElementById('options-list');
@@ -314,36 +311,24 @@
                 btn.className = `w-full p-4 flex items-start justify-start bg-white border-2 rounded-2xl transition-all text-left group ${answers[currentIdx] === i ? 'option-selected border-green-500' : 'border-gray-200'}`;
                 btn.innerHTML = `<span class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-[#1e3a8a] text-white rounded-full text-[10px] font-black mr-4 mt-0.5">${labels[i]}</span><div class="flex-grow text-left"><span class="block font-bold text-gray-700 option-text text-left">${opt}</span></div>`;
                 btn.onclick = () => {
-                    answers[currentIdx] = i;
-                    skipped[currentIdx] = false;
-                    updatePalette();
-                    showQuestion();
+                    answers[currentIdx] = i; skipped[currentIdx] = false;
+                    updatePalette(); showQuestion();
                 };
                 list.appendChild(btn);
             });
 
             document.getElementById('btn-main').innerText = (currentIdx === questions.length - 1) ? "PREVIEW" : "NEXT";
             updatePalette();
-            
-            // Forces MathJax to re-scan for formulas after the question loads
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise();
-            }
+            if (window.MathJax && window.MathJax.typesetPromise) window.MathJax.typesetPromise();
         }
 
         function skipQuestion() {
             if (answers[currentIdx] === null) skipped[currentIdx] = true;
-            if (currentIdx < questions.length - 1) {
-                currentIdx++;
-                showQuestion();
-            } else { updatePalette(); }
+            if (currentIdx < questions.length - 1) { currentIdx++; showQuestion(); } else { updatePalette(); }
         }
 
         function nextOrPreview() {
-            if(currentIdx < questions.length - 1) {
-                currentIdx++;
-                showQuestion();
-            } else { showPreview(); }
+            if(currentIdx < questions.length - 1) { currentIdx++; showQuestion(); } else { showPreview(); }
         }
 
         function prevQuestion() { if(currentIdx > 0) { currentIdx--; showQuestion(); } }
@@ -354,7 +339,6 @@
             questions.forEach((q, i) => {
                 let selectionText = answers[i] !== null ? q.options[answers[i]] : (skipped[i] ? "SKIPPED" : "NOT ANSWERED");
                 let colorClass = answers[i] !== null ? "text-[#1e3a8a]" : "text-orange-600";
-                
                 cont.innerHTML += `<div class="p-4 bg-gray-50 rounded-2xl border border-gray-100 text-left">
                     <p class="text-[10px] font-black text-gray-400 uppercase">Q${i+1}</p>
                     <p class="text-sm font-bold text-gray-700 mb-1 preview-text">${q.question}</p>
@@ -374,40 +358,32 @@
 
         async function finalFinish() {
             const submitBtn = event.target;
-            submitBtn.disabled = true;
-            submitBtn.innerText = "SUBMITTING...";
-
+            submitBtn.disabled = true; submitBtn.innerText = "SUBMITTING...";
             let score = 0;
             const summaryList = document.getElementById('result-summary-list');
             summaryList.innerHTML = ''; 
 
             questions.forEach((q, i) => {
-                const userChoice = parseInt(answers[i]);
-                const correctChoice = parseInt(q.correctIndex);
-                const isCorrect = userChoice === correctChoice;
+                const isCorrect = answers[i] === parseInt(q.correctIndex);
                 if (isCorrect) score++;
-
                 const item = document.createElement('div');
                 item.className = `p-4 rounded-2xl border-2 mb-3 ${isCorrect ? 'border-green-100 bg-green-50' : 'border-red-100 bg-red-50'}`;
                 item.innerHTML = `
-                    <div class="flex justify-between items-start mb-1">
-                        <span class="text-[10px] font-black uppercase ${isCorrect ? 'text-green-600' : 'text-red-600'}">Question ${i + 1}</span>
-                    </div>
+                    <div class="flex justify-between items-start mb-1"><span class="text-[10px] font-black uppercase ${isCorrect ? 'text-green-600' : 'text-red-600'}">Question ${i + 1}</span></div>
                     <p class="text-sm font-bold text-gray-800 mb-2 preview-text">${q.question}</p>
                     <div class="text-xs font-bold space-y-1">
                         <p>Your Answer: ${answers[i] !== null ? q.options[answers[i]] : 'None'}</p>
-                        ${!isCorrect ? `<p class="text-green-700 border-t pt-1 mt-1">Correct Answer: ${q.options[correctChoice]}</p>` : ''}
+                        ${!isCorrect ? `<p class="text-green-700 border-t pt-1 mt-1 font-bold">Correct Answer: ${q.options[q.correctIndex]}</p>` : ''}
                     </div>`;
                 summaryList.appendChild(item);
             });
 
-            const urlParams = new URLSearchParams(window.location.search);
             const resData = {
                 name: document.getElementById('userName').value,
                 mobile: document.getElementById('userMobile').value,
                 district: document.getElementById('userDistrict').value,
                 feedback: document.getElementById('feedbackText').value,
-                quizId: urlParams.get('id') || "SSLC_MATHS_2026",
+                quizId: new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026",
                 score, total: questions.length, timestamp: new Date()
             };
 
