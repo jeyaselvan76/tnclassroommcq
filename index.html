@@ -35,6 +35,18 @@
 
         .option-selected { background-color: #f0fdf4 !important; border-color: #22c55e !important; box-shadow: 0 0 0 1px #22c55e; }
         .glass-nav { background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-top: 1px solid #e2e8f0; }
+        
+        /* Footer Styling */
+        .quiz-footer {
+            text-align: center;
+            padding: 10px;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: #1e3a8a;
+            opacity: 0.5;
+            text-transform: uppercase;
+        }
     </style>
 </head>
 <body class="antialiased min-h-screen">
@@ -77,6 +89,9 @@
                 <p class="text-[10px] font-black text-gray-400 uppercase mb-4 tracking-widest">Question Palette</p>
                 <div id="question-palette" class="flex flex-wrap gap-2"></div>
             </div>
+            
+            <!-- Quiz Screen Footer -->
+            <div class="quiz-footer">www.classroom.com</div>
         </div>
 
         <div class="fixed bottom-0 left-0 right-0 p-4 flex justify-center z-40">
@@ -222,19 +237,15 @@
             document.getElementById('stat-left').innerText = questions.length - ans - skp;
         }
 
-        /* --- NEW PREVIEW LOGIC --- */
         function showPreview() {
             document.getElementById('section-quiz').classList.add('hidden');
             document.getElementById('section-preview').classList.remove('hidden');
-            
             const summary = document.getElementById('summary-list');
             summary.innerHTML = '';
-            
             let allAnswered = true;
             questions.forEach((q, i) => {
                 const isAns = answers[i] !== null;
                 if(!isAns) allAnswered = false;
-
                 const div = document.createElement('div');
                 div.className = "p-4 bg-white rounded-xl border border-gray-200 flex justify-between items-center";
                 div.innerHTML = `
@@ -246,7 +257,6 @@
                 `;
                 summary.appendChild(div);
             });
-
             const submitBtn = document.getElementById('final-submit-btn');
             if(!allAnswered) {
                 submitBtn.className = "flex-[2] py-4 rounded-2xl font-black text-white uppercase text-xs bg-gray-300 pointer-events-none";
@@ -273,13 +283,10 @@
             let score = 0;
             const correction = document.getElementById('correction-list');
             correction.innerHTML = '';
-
             answers.forEach((ans, i) => {
                 const correctIdx = parseInt(questions[i].correctIndex);
                 const isCorrect = (ans === correctIdx);
                 if(isCorrect) score++;
-
-                // Build Correction Cards
                 const card = document.createElement('div');
                 card.className = `p-5 rounded-2xl border-l-8 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`;
                 card.innerHTML = `
@@ -298,13 +305,11 @@
                 `;
                 correction.appendChild(card);
             });
-
             const res = {
                 name: document.getElementById('userName').value, mobile: document.getElementById('userMobile').value,
                 dist: document.getElementById('userDistrict').value, quizId: quizId,
                 score: score, total: questions.length, timestamp: new Date()
             };
-
             try {
                 await window.addDoc(window.collection(window.db, "results"), res);
                 document.getElementById('display-score').innerText = `${score}/${questions.length}`;
