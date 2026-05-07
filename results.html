@@ -115,12 +115,15 @@
 
         window.applyFilters = () => {
             const qId = document.getElementById('filterQuiz').value.toLowerCase();
-            const dist = document.getElementById('filterDist').value.toLowerCase();
+            const distInput = document.getElementById('filterDist').value.toLowerCase();
             const search = document.getElementById('filterName').value.toLowerCase();
 
             filteredData = allResults.filter(r => {
+                // Check both r.district and r.dist for filtering
+                const districtValue = (r.district || r.dist || "").toLowerCase();
+                
                 return (r.quizId || "").toLowerCase().includes(qId) &&
-                       (r.district || "").toLowerCase().includes(dist) &&
+                       districtValue.includes(distInput) &&
                        ((r.name || "").toLowerCase().includes(search) || (r.mobile || "").includes(search));
             });
             renderTable(filteredData);
@@ -132,18 +135,21 @@
 
             data.forEach(item => {
                 const date = item.timestamp?.toDate ? item.timestamp.toDate().toLocaleString() : "N/A";
+                // Cross-check district vs dist
+                const displayDistrict = item.district || item.dist || "—";
+                
                 const row = `
                     <tr class="hover:bg-slate-50 transition">
                         <td class="p-4 text-[10px] text-slate-400 font-bold whitespace-nowrap">${date}</td>
-                        <td class="p-4 font-bold text-slate-700">${item.name}</td>
+                        <td class="p-4 font-bold text-slate-700">${item.name || '—'}</td>
                         <td class="p-4 text-sm text-slate-600 font-mono">${item.mobile || '—'}</td>
-                        <td class="p-4 text-sm text-slate-600">${item.district}</td>
+                        <td class="p-4 text-sm text-slate-600">${displayDistrict}</td>
                         <td class="p-4">
-                            <span class="bg-blue-100 text-blue-700 text-[10px] px-2 py-1 rounded-md font-black uppercase tracking-tighter">${item.quizId}</span>
+                            <span class="bg-blue-100 text-blue-700 text-[10px] px-2 py-1 rounded-md font-black uppercase tracking-tighter">${item.quizId || 'N/A'}</span>
                         </td>
                         <td class="p-4 text-center">
-                            <span class="font-black text-green-600 text-lg">${item.score}</span>
-                            <span class="text-xs text-slate-400">/${item.total}</span>
+                            <span class="font-black text-green-600 text-lg">${item.score ?? 0}</span>
+                            <span class="text-xs text-slate-400">/${item.total || 0}</span>
                         </td>
                         <td class="p-4 text-xs text-slate-600 italic whitespace-normal feedback-cell">
                             ${item.feedback || "—"}
@@ -158,12 +164,11 @@
         window.downloadExcel = () => {
             if (filteredData.length === 0) return alert("No data to export!");
 
-            // Format data for Excel
             const excelData = filteredData.map(item => ({
                 "Date/Time": item.timestamp?.toDate ? item.timestamp.toDate().toLocaleString() : "N/A",
                 "Student Name": item.name,
                 "Mobile Number": item.mobile,
-                "District": item.district,
+                "District": item.district || item.dist || "N/A", // Fixed for Excel
                 "Quiz ID": item.quizId,
                 "Score": item.score,
                 "Total": item.total,
@@ -174,7 +179,6 @@
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Student Results");
 
-            // Save the file
             const fileName = `TNSED_Results_${new Date().toISOString().slice(0,10)}.xlsx`;
             XLSX.writeFile(workbook, fileName);
         };
