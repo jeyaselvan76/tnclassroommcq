@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TNSED MCQ Portal | WWW.TNCLASSROOM.COM</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <script>
       window.MathJax = {
@@ -14,39 +15,65 @@
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-    <style>
-        body { -webkit-tap-highlight-color: transparent; font-family: sans-serif; background-color: #f8fafc; }
-        
-        .tamil-fix {
-            font-family: 'Segoe UI', 'Latha', 'Tamil Sangam MN', sans-serif !important;
-            display: inline-block !important;
-            white-space: normal !important;
-            font-style: normal !important;
-            font-weight: 600 !important;
-            color: #1e3a8a;
-        }
+   <style>
+    body { 
+        -webkit-tap-highlight-color: transparent; 
+        font-family: sans-serif; 
+        background-color: #f8fafc; 
+    }
+    
+    /* THE ULTIMATE TAMIL FIX: Prevents characters from breaking/stretching */
+    .tamil-fix, mjx-utext, mjx-c {
+        font-family: 'Segoe UI', 'Latha', 'Tamil Sangam MN', sans-serif !important;
+        font-style: normal !important;
+        display: inline-block !important;
+    }
 
-        .stat-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 10px; text-align: center; }
-        .palette-btn { width: 35px; height: 35px; border-radius: 8px; font-weight: 800; font-size: 12px; transition: 0.2s; }
-        .p-unanswered { background: #f1f5f9; color: #94a3b8; }
-        .p-answered { background: #22c55e; color: white; }
-        .p-skipped { background: #f59e0b; color: white; }
-        .p-current { border: 3px solid #1e3a8a; background: white; color: #1e3a8a; }
+    .stat-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 10px; text-align: center; }
+    .palette-btn { width: 35px; height: 35px; border-radius: 8px; font-weight: 800; font-size: 12px; transition: 0.2s; }
+    .p-unanswered { background: #f1f5f9; color: #94a3b8; }
+    .p-answered { background: #22c55e; color: white; }
+    .p-skipped { background: #f59e0b; color: white; }
+    .p-current { border: 3px solid #1e3a8a; background: white; color: #1e3a8a; }
 
-        .option-selected { background-color: #f0fdf4 !important; border-color: #22c55e !important; box-shadow: 0 0 0 1px #22c55e; }
-        .glass-nav { background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-top: 1px solid #e2e8f0; }
-        
-        .quiz-footer {
-            text-align: center;
-            padding: 10px;
-            font-size: 10px;
-            font-weight: 900;
-            letter-spacing: 2px;
-            color: #1e3a8a;
-            opacity: 0.5;
-            text-transform: uppercase;
-        }
-    </style>
+    .option-selected { background-color: #f0fdf4 !important; border-color: #22c55e !important; box-shadow: 0 0 0 1px #22c55e; }
+    .glass-nav { background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-top: 1px solid #e2e8f0; }
+    
+    .quiz-footer {
+        text-align: center; padding: 10px; font-size: 10px; font-weight: 900;
+        letter-spacing: 2px; color: #1e3a8a; opacity: 0.5; text-transform: uppercase;
+    }
+
+    /* PDF Layout & Branding Fixes */
+    #pdf-content { background: white !important; }
+    
+    #pdf-header-brand, #pdf-footer-brand { display: none; }
+    
+    #pdf-header-brand, #display-score, #user-details-pdf {
+        page-break-after: avoid;
+        break-after: avoid;
+    }
+
+    .correction-card {
+        page-break-inside: avoid;
+        break-inside: avoid;
+        margin-bottom: 10px;
+    }
+
+    #pdf-watermark-main {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-45deg);
+        font-size: 5rem;
+        color: rgba(0, 0, 0, 0.05) !important;
+        font-weight: 900;
+        z-index: 9999;
+        white-space: nowrap;
+        pointer-events: none;
+    }
+</style>
 </head>
 <body class="antialiased min-h-screen">
 
@@ -104,7 +131,7 @@
             <div id="summary-list" class="space-y-3 mb-6"></div>
             <div class="fixed bottom-0 left-0 right-0 p-6 bg-white border-t flex gap-3 z-50">
                 <button onclick="backToQuiz()" class="flex-1 py-4 bg-gray-200 rounded-2xl font-black uppercase text-xs">Go Back</button>
-                <button id="preview-submit-btn" onclick="goToFeedback()" class="flex-[2] py-4 rounded-2xl font-black text-white uppercase text-xs">Proceed to Submit</button>
+                <button id="preview-submit-btn" onclick="goToFeedback()" class="flex-[2] py-4 rounded-2xl font-black text-white uppercase text-xs bg-blue-600 shadow-lg">Proceed to Submit</button>
             </div>
         </div>
     </div>
@@ -119,13 +146,31 @@
 
     <div id="section-success" class="hidden min-h-screen p-4 bg-white">
         <div class="max-w-3xl mx-auto py-10">
-            <div class="text-center mb-10">
-                <h2 class="text-6xl font-black text-green-600 mb-2" id="display-score">0/0</h2>
-                <p class="text-sm font-bold text-gray-500 uppercase tracking-widest">Assessment Completed</p>
+            <div id="pdf-content" class="p-4">
+                <div id="pdf-header-brand" class="text-center border-b-2 border-blue-900 pb-2 mb-4">
+                    <p class="text-[10px] font-black text-blue-900 tracking-[0.3em] uppercase">www.tnclassroom.com</p>
+                </div>
+                
+                <div id="pdf-watermark-main">WWW.TNCLASSROOM.COM</div>
+                
+                <div class="text-center mb-6">
+                    <h2 class="text-6xl font-black text-green-600 mb-2" id="display-score">0/0</h2>
+                    <p class="text-sm font-bold text-gray-500 uppercase tracking-widest">Assessment Completed</p>
+                    <div id="user-details-pdf" class="mt-4 text-slate-700 font-bold text-sm bg-slate-50 p-4 rounded-xl border border-slate-200"></div>
+                </div>
+                
+                <h3 class="font-black text-gray-800 mb-4 uppercase text-sm border-b pb-2">Correction Sheet</h3>
+                <div id="correction-list" class="space-y-6 mb-10"></div>
+
+                <div id="pdf-footer-brand" class="text-center border-t border-slate-200 pt-2 mt-8">
+                    <p class="text-[8px] font-bold text-slate-400 uppercase tracking-widest">System Generated Report — www.tnclassroom.com</p>
+                </div>
             </div>
-            <h3 class="font-black text-gray-800 mb-4 uppercase text-sm border-b pb-2">Correction Sheet</h3>
-            <div id="correction-list" class="space-y-6 mb-10"></div>
-            <button onclick="location.reload()" class="w-full bg-gray-900 text-white p-5 rounded-2xl font-black shadow-xl">CLOSE SESSION</button>
+            
+            <div class="flex flex-col gap-3">
+                <button onclick="downloadCorrectionPDF()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-black shadow-lg">📊 DOWNLOAD CORRECTION PDF</button>
+                <button onclick="location.reload()" class="w-full bg-gray-900 text-white p-5 rounded-2xl font-black shadow-xl">CLOSE SESSION</button>
+            </div>
         </div>
     </div>
 
@@ -158,7 +203,6 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             const quizId = new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026";
-            document.getElementById('display-subject').innerText = quizId.replace(/_/g, ' ');
             const distSelect = document.getElementById('userDistrict');
             tnDistricts.forEach(d => distSelect.add(new Option(d, d)));
         });
@@ -167,7 +211,7 @@
             const name = document.getElementById('userName').value.trim();
             const mobile = document.getElementById('userMobile').value.trim();
             const dist = document.getElementById('userDistrict').value;
-            if(!name || mobile.length !== 10 || !dist) return alert("Enter valid Name, 10-digit Mobile and District.");
+            if(!name || mobile.length !== 10 || !dist) return alert("Invalid details.");
 
             try {
                 const qId = new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026";
@@ -207,8 +251,7 @@
         }
 
         function nextOrPreview() {
-            if (currentIdx < questions.length - 1) { currentIdx++; showQuestion(); } 
-            else { showPreview(); }
+            if (currentIdx < questions.length - 1) { currentIdx++; showQuestion(); } else { showPreview(); }
         }
 
         function prevQuestion() { if(currentIdx > 0) { currentIdx--; showQuestion(); } }
@@ -221,8 +264,7 @@
                 const btn = document.createElement('button');
                 btn.innerText = i + 1;
                 let s = 'p-unanswered';
-                if (answers[i] !== null) { s = 'p-answered'; ans++; } 
-                else if (skipped[i]) { s = 'p-skipped'; skp++; }
+                if (answers[i] !== null) { s = 'p-answered'; ans++; } else if (skipped[i]) { s = 'p-skipped'; skp++; }
                 btn.className = `palette-btn ${s} ${i === currentIdx ? 'p-current' : ''}`;
                 btn.onclick = () => { currentIdx = i; showQuestion(); };
                 palette.appendChild(btn);
@@ -244,97 +286,140 @@
                 if(!isAns) allAnswered = false;
                 const div = document.createElement('div');
                 div.className = "p-4 bg-white rounded-xl border border-gray-200 flex justify-between items-center";
-                div.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <span class="w-8 h-8 bg-slate-100 flex items-center justify-center rounded-lg font-black text-xs text-slate-500">${i+1}</span>
-                        <span class="text-sm font-bold ${isAns ? 'text-green-600' : 'text-red-500'}">${isAns ? 'ANSWERED' : 'NOT ANSWERED'}</span>
-                    </div>
-                    <button onclick="backToSpecificQ(${i})" class="text-[10px] font-black text-blue-500 bg-blue-50 px-3 py-1 rounded-full uppercase">Edit</button>
-                `;
+                div.innerHTML = `<div class="flex items-center gap-3"><span class="w-8 h-8 bg-slate-100 flex items-center justify-center rounded-lg font-black text-xs text-slate-500">${i+1}</span><span class="text-sm font-bold ${isAns ? 'text-green-600' : 'text-red-500'}">${isAns ? 'ANSWERED' : 'NOT ANSWERED'}</span></div><button onclick="backToSpecificQ(${i})" class="text-[10px] font-black text-blue-500 bg-blue-50 px-3 py-1 rounded-full uppercase">Edit</button>`;
                 summary.appendChild(div);
             });
-            const submitBtn = document.getElementById('preview-submit-btn');
-            if(!allAnswered) {
-                submitBtn.className = "flex-[2] py-4 rounded-2xl font-black text-white uppercase text-xs bg-gray-300 pointer-events-none";
-                submitBtn.innerText = "Answer all to submit";
-            } else {
-                submitBtn.className = "flex-[2] py-4 rounded-2xl font-black text-white uppercase text-xs bg-blue-600 shadow-lg active:scale-95";
-                submitBtn.innerText = "Proceed to Submit";
-            }
+            document.getElementById('preview-submit-btn').innerText = allAnswered ? "Proceed to Submit" : "Answer all to submit";
+            document.getElementById('preview-submit-btn').style.pointerEvents = allAnswered ? "auto" : "none";
+            document.getElementById('preview-submit-btn').style.opacity = allAnswered ? "1" : "0.5";
         }
 
-        function backToQuiz() {
-            document.getElementById('section-preview').classList.add('hidden');
-            document.getElementById('section-quiz').classList.remove('hidden');
+        function backToQuiz() { document.getElementById('section-preview').classList.add('hidden'); document.getElementById('section-quiz').classList.remove('hidden'); }
+        function backToSpecificQ(idx) { currentIdx = idx; backToQuiz(); showQuestion(); }
+        function goToFeedback() { document.getElementById('section-preview').classList.add('hidden'); document.getElementById('section-feedback').classList.remove('hidden'); }
+
+       async function finalSubmitDirect() {
+    const btn = document.getElementById('final-confirm-btn');
+    btn.disabled = true; 
+    btn.innerText = "SUBMITTING...";
+    btn.classList.add('opacity-50');
+
+    const name = document.getElementById('userName').value;
+    const mobile = document.getElementById('userMobile').value;
+    const dist = document.getElementById('userDistrict').value;
+    const quizId = new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026";
+
+    // 1. Prepare User Details for the PDF header
+    document.getElementById('user-details-pdf').innerHTML = `
+        <div class="grid grid-cols-2 gap-2 text-left">
+            <p><span class="opacity-50">Name:</span> ${name}</p>
+            <p><span class="opacity-50">Mobile:</span> ${mobile}</p>
+            <p><span class="opacity-50">District:</span> ${dist}</p>
+            <p><span class="opacity-50">Date:</span> ${new Date().toLocaleDateString()}</p>
+        </div>
+    `;
+
+    let score = 0;
+    const correction = document.getElementById('correction-list');
+    correction.innerHTML = '';
+
+    // 2. Generate Correction Cards
+    answers.forEach((ans, i) => {
+        const correctIdx = parseInt(questions[i].correctIndex);
+        const isCorrect = (ans === correctIdx);
+        if(isCorrect) score++;
+
+        const card = document.createElement('div');
+        // 'correction-card' class ensures the PDF doesn't cut the question in half
+        card.className = `correction-card p-5 rounded-2xl border-l-8 mb-4 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`;
+        
+        card.innerHTML = `
+            <p class="font-bold text-gray-800 mb-3">${renderSafeText(questions[i].question)}</p>
+            <div class="text-sm space-y-1">
+                <p><span class="font-bold opacity-60 uppercase text-[10px]">Your Answer:</span> 
+                   <span class="${isCorrect ? 'text-green-700' : 'text-red-700'} font-black">${renderSafeText(questions[i].options[ans])}</span>
+                </p>
+                ${!isCorrect ? `
+                <p><span class="font-bold opacity-60 uppercase text-[10px]">Correct Answer:</span> 
+                   <span class="text-green-700 font-black">${renderSafeText(questions[i].options[correctIdx])}</span>
+                </p>` : ''}
+            </div>
+        `;
+        correction.appendChild(card);
+    });
+
+    // 3. Save to Firebase
+    try {
+        const resData = {
+            name: name,
+            mobile: mobile,
+            district: dist,
+            feedback: document.getElementById('feedbackText').value,
+            score: score,
+            total: questions.length,
+            quizId: quizId,
+            timestamp: new Date()
+        };
+
+        await window.addDoc(window.collection(window.db, "results"), resData);
+
+        // 4. UI Transition to Success Screen
+        document.getElementById('display-score').innerText = `${score}/${questions.length}`;
+        document.getElementById('section-feedback').classList.add('hidden');
+        document.getElementById('section-success').classList.remove('hidden');
+        
+        // Ensure MathJax renders formulas in the correction sheet
+        if (window.MathJax && window.MathJax.typesetPromise) {
+            window.MathJax.typesetPromise();
         }
+        
+        window.scrollTo(0, 0);
 
-        function backToSpecificQ(idx) {
-            currentIdx = idx;
-            backToQuiz();
-            showQuestion();
-        }
+    } catch (e) {
+        console.error("Submission Error: ", e);
+        alert("Sync Error. Please check your connection.");
+        btn.disabled = false;
+        btn.innerText = "Confirm Submit";
+        btn.classList.remove('opacity-50');
+    }
+}
 
-        /* --- RESTORED FEEDBACK NAVIGATION --- */
-        function goToFeedback() {
-            document.getElementById('section-preview').classList.add('hidden');
-            document.getElementById('section-feedback').classList.remove('hidden');
-        }
+   window.downloadCorrectionPDF = function() {
+    const element = document.getElementById('pdf-content');
+    const h = document.getElementById('pdf-header-brand');
+    const f = document.getElementById('pdf-footer-brand');
+    const w = document.getElementById('pdf-watermark-main');
+    
+    // Show branding
+    h.style.display = 'block'; 
+    f.style.display = 'block'; 
+    w.style.display = 'block';
 
-        async function finalSubmitDirect() {
-            const btn = document.getElementById('final-confirm-btn');
-            btn.disabled = true; btn.innerText = "SUBMITTING..."; btn.classList.add('opacity-50');
+    const userName = document.getElementById('userName').value || "Student";
+    const opt = {
+        margin: [10, 10, 10, 10], 
+        filename: `Correction_${userName}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true,
+            scrollY: 0 
+        },
+        jsPDF: { 
+            unit: 'mm', 
+            format: 'a4', 
+            orientation: 'portrait' 
+        },
+        // Changed to 'legacy' to prevent aggressive new pages
+        pagebreak: { mode: 'legacy' } 
+    };
 
-            const quizId = new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026";
-            let score = 0;
-            const correction = document.getElementById('correction-list');
-            correction.innerHTML = '';
-
-            answers.forEach((ans, i) => {
-                const correctIdx = parseInt(questions[i].correctIndex);
-                const isCorrect = (ans === correctIdx);
-                if(isCorrect) score++;
-                const card = document.createElement('div');
-                card.className = `p-5 rounded-2xl border-l-8 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`;
-                card.innerHTML = `
-                    <p class="font-bold text-gray-800 mb-3">${renderSafeText(questions[i].question)}</p>
-                    <div class="grid grid-cols-1 gap-2 text-sm">
-                        <div class="flex items-center gap-2">
-                            <span class="text-gray-500 font-bold uppercase text-[10px]">Your Answer:</span>
-                            <span class="${isCorrect ? 'text-green-700' : 'text-red-700'} font-black">${renderSafeText(questions[i].options[ans])}</span>
-                        </div>
-                        ${!isCorrect ? `
-                        <div class="flex items-center gap-2">
-                            <span class="text-gray-500 font-bold uppercase text-[10px]">Correct Answer:</span>
-                            <span class="text-green-700 font-black">${renderSafeText(questions[i].options[correctIdx])}</span>
-                        </div>` : ''}
-                    </div>
-                `;
-                correction.appendChild(card);
-            });
-
-            const res = {
-                name: document.getElementById('userName').value, 
-                mobile: document.getElementById('userMobile').value,
-                dist: document.getElementById('userDistrict').value, 
-                feedback: document.getElementById('feedbackText').value,
-                quizId: quizId,
-                score: score, 
-                total: questions.length, 
-                timestamp: new Date()
-            };
-
-            try {
-                await window.addDoc(window.collection(window.db, "results"), res);
-                document.getElementById('display-score').innerText = `${score}/${questions.length}`;
-                document.getElementById('section-feedback').classList.add('hidden');
-                document.getElementById('section-success').classList.remove('hidden');
-                window.scrollTo(0,0);
-                if (window.MathJax) window.MathJax.typesetPromise();
-            } catch (e) { 
-                alert("Sync Error."); 
-                btn.disabled = false; btn.innerText = "Confirm Submit"; btn.classList.remove('opacity-50');
-            }
-        }
+    html2pdf().set(opt).from(element).save().then(() => {
+        h.style.display = 'none'; 
+        f.style.display = 'none'; 
+        w.style.display = 'none';
+    });
+};
     </script>
 </body>
 </html>
