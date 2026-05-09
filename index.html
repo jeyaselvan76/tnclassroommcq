@@ -183,11 +183,12 @@
         const tnDistricts = ["Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kancheepuram", "Kanniyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivagangai", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"];
         let questions = []; let currentIdx = 0; let answers = []; let skipped = [];
 
-        function renderSafeText(text) {
-            if (!text) return "";
-            return text.replace(/\\text\{([^\}]+)\}/g, '<span class="tamil-fix">$1</span>');
-        }
-
+      function renderSafeText(text) {
+    if (!text) return "";
+    // Detects Tamil characters and wraps them in the protective CSS class
+    // This allows you to remove manual \text{} tags from your Google Sheet
+    return text.replace(/[\u0b80-\u0bff]+/g, (match) => `<span class="tamil-fix">${match}</span>`);
+}
         document.addEventListener("DOMContentLoaded", () => {
             const quizId = new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026";
             const distSelect = document.getElementById('userDistrict');
@@ -212,28 +213,58 @@
             } catch (e) { alert("Load Error."); }
         }
 
-        function showQuestion() {
-            const q = questions[currentIdx];
-            document.getElementById('q-text').innerHTML = renderSafeText(q.question);
-            const qImg = document.getElementById('q-image');
-            if(q.imageUrl) { qImg.src = q.imageUrl; document.getElementById('img-container').classList.remove('hidden'); }
-            else { document.getElementById('img-container').classList.add('hidden'); }
-            
-            const list = document.getElementById('options-list');
-            list.innerHTML = '';
-            q.options.forEach((opt, i) => {
-                const btn = document.createElement('button');
-                btn.className = `w-full p-4 flex items-center bg-white border-2 rounded-2xl text-left transition ${answers[currentIdx] === i ? 'option-selected' : 'border-gray-100'}`;
-                btn.innerHTML = `<span class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-[#1e3a8a] text-white rounded-full text-[10px] font-black mr-4">${['A','B','C','D'][i]}</span><div class="flex-grow font-bold text-gray-700">${renderSafeText(opt)}</div>`;
-                btn.onclick = () => { answers[currentIdx] = i; skipped[currentIdx] = false; showQuestion(); };
-                list.appendChild(btn);
-            });
-            updatePalette();
-            // FORCED MATHJAX TRIGGER - Resolves Raw LaTeX issue 
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise([document.getElementById('section-quiz')]);
-            }
-        }
+      function showQuestion() {
+    const q = questions[currentIdx];
+    
+    // Update Question Text
+    document.getElementById('q-text').innerHTML = renderSafeText(q.question);
+    
+    // Update Image Container
+    const qImg = document.getElementById('q-image');
+    if (q.imageUrl && q.imageUrl.trim() !== "") { 
+        qImg.src = q.imageUrl; 
+        document.getElementById('img-container').classList.remove('hidden'); 
+    } else { 
+        document.getElementById('img-container').classList.add('hidden'); 
+    }
+    
+    // Generate Options List
+    const list = document.getElementById('options-list');
+    list.innerHTML = '';
+    const labels = ['A', 'B', 'C', 'D'];
+    
+    q.options.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        
+        // Dynamic class setting based on selection
+        const isSelected = answers[currentIdx] === i;
+        btn.className = `w-full p-4 flex items-center bg-white border-2 rounded-2xl text-left transition ${isSelected ? 'option-selected' : 'border-gray-100'}`;
+        
+        btn.innerHTML = `
+            <span class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-[#1e3a8a] text-white rounded-full text-[10px] font-black mr-4">${labels[i]}</span>
+            <div class="flex-grow font-bold text-gray-700">${renderSafeText(opt)}</div>
+        `;
+        
+        btn.onclick = () => { 
+            answers[currentIdx] = i; 
+            skipped[currentIdx] = false; 
+            showQuestion(); 
+        };
+        list.appendChild(btn);
+    });
+
+    // Update Navigation Button Text
+    document.getElementById('btn-main').innerText = (currentIdx === questions.length - 1) ? "Preview" : "Next";
+    
+    // Refresh the Navigator Palette
+    updatePalette();
+
+    // CRITICAL: Force MathJax to re-render the entire quiz section
+    if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise([document.getElementById('section-quiz')])
+            .catch((err) => console.error("MathJax rendering error: ", err.message));
+    }
+}
 
         function skipQuestion() {
             if (answers[currentIdx] === null) skipped[currentIdx] = true;
