@@ -5,13 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TNSED Admin | Results Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Library for Excel Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        .feedback-cell {
-            word-break: break-word;
-            min-width: 250px;
-        }
+        .feedback-cell { word-break: break-word; min-width: 250px; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e3a8a; border-radius: 10px; }
@@ -21,36 +17,37 @@
 
     <div class="bg-[#1e3a8a] text-white p-6 shadow-lg sticky top-0 z-50">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-            <h1 class="text-2xl font-black tracking-tighter uppercase">Results Dashboard</h1>
+            <div>
+                <h1 class="text-2xl font-black tracking-tighter uppercase">Results Dashboard</h1>
+                <p id="date-range-label" class="text-[10px] font-bold text-cyan-300 uppercase tracking-widest mt-1">Loading last 2 days...</p>
+            </div>
             <div class="flex gap-3">
                 <button onclick="downloadExcel()" class="bg-green-500 text-white px-6 py-2 rounded-xl font-bold hover:bg-green-600 transition shadow-lg flex items-center gap-2">
-                    <span>📊</span> DOWNLOAD EXCEL
+                    <span>📊</span> EXCEL
                 </button>
-                <button onclick="fetchResults()" class="bg-cyan-400 text-[#1e3a8a] px-6 py-2 rounded-xl font-bold hover:bg-white transition shadow-lg">
-                    REFRESH DATA
+                <button onclick="resetAndFetch()" class="bg-cyan-400 text-[#1e3a8a] px-6 py-2 rounded-xl font-bold hover:bg-white transition shadow-lg">
+                    REFRESH
                 </button>
             </div>
         </div>
     </div>
 
     <div class="max-w-7xl mx-auto p-6">
-        <!-- Filters -->
         <div class="bg-white p-6 rounded-3xl shadow-md grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 border border-slate-100">
             <div>
-                <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Filter by Quiz ID</label>
-                <input type="text" id="filterQuiz" oninput="applyFilters()" placeholder="e.g. PSY1-KANNA" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-[#1e3a8a]">
+                <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Quiz ID</label>
+                <input type="text" id="filterQuiz" oninput="applyFilters()" placeholder="Search Quiz..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
             </div>
             <div>
-                <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Filter by District</label>
-                <input type="text" id="filterDist" oninput="applyFilters()" placeholder="e.g. Thanjavur" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-[#1e3a8a]">
+                <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">District</label>
+                <input type="text" id="filterDist" oninput="applyFilters()" placeholder="Search District..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
             </div>
             <div>
-                <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Search Name / Mobile</label>
-                <input type="text" id="filterName" oninput="applyFilters()" placeholder="Student name or phone..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-[#1e3a8a]">
+                <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Student / Mobile</label>
+                <input type="text" id="filterName" oninput="applyFilters()" placeholder="Search Student..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
             </div>
         </div>
 
-        <!-- Table -->
         <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
             <div class="overflow-x-auto custom-scrollbar">
                 <table id="resultsTable" class="w-full text-left border-collapse">
@@ -62,23 +59,25 @@
                             <th class="p-4 text-xs font-black uppercase text-slate-500">District</th>
                             <th class="p-4 text-xs font-black uppercase text-slate-500">Quiz ID</th>
                             <th class="p-4 text-xs font-black uppercase text-slate-500 text-center">Score</th>
-                            <th class="p-4 text-xs font-black uppercase text-slate-500">Full Feedback</th>
+                            <th class="p-4 text-xs font-black uppercase text-slate-500">Feedback</th>
                         </tr>
                     </thead>
-                    <tbody id="resultsTableBody" class="divide-y divide-slate-100">
-                        <!-- Data injected here -->
-                    </tbody>
+                    <tbody id="resultsTableBody" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
-            <div id="loadingState" class="p-20 text-center text-slate-400 font-bold">
-                Click Refresh to load student data...
+            
+            <div class="p-8 bg-slate-50 border-t border-slate-100 flex flex-col items-center gap-4">
+                <div id="loadingState" class="text-slate-400 font-bold hidden">Fetching Data...</div>
+                <button id="loadMoreBtn" onclick="fetchNextTwoDays()" class="bg-white border-2 border-[#1e3a8a] text-[#1e3a8a] px-8 py-3 rounded-2xl font-black text-xs uppercase hover:bg-[#1e3a8a] hover:text-white transition-all shadow-md">
+                    Load Previous 2 Days
+                </button>
             </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, query, orderBy, where, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBW92t7GWAf6vIHdJ83n7Nz7Io3y2GArVw",
@@ -92,24 +91,64 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        let allResults = [];
-        let filteredData = [];
 
-        window.fetchResults = async () => {
+        let allResults = []; // Accumulates all fetched chunks
+        let currentWindowEnd = new Date(); // Starts at 'Now'
+        const WINDOW_SIZE_DAYS = 2;
+
+        window.resetAndFetch = () => {
+            allResults = [];
+            document.getElementById('resultsTableBody').innerHTML = '';
+            currentWindowEnd = new Date();
+            fetchNextTwoDays();
+        };
+
+        window.fetchNextTwoDays = async () => {
             const loader = document.getElementById('loadingState');
-            loader.innerText = "Connecting to Firestore...";
+            const btn = document.getElementById('loadMoreBtn');
+            const label = document.getElementById('date-range-label');
+
             loader.classList.remove('hidden');
-            
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+
+            // Calculate start and end for this 2-day chunk
+            const windowStart = new Date(currentWindowEnd);
+            windowStart.setDate(windowStart.getDate() - WINDOW_SIZE_DAYS);
+
+            label.innerText = `Range: ${windowStart.toLocaleDateString()} to ${currentWindowEnd.toLocaleDateString()}`;
+
             try {
-                const q = query(collection(db, "results"), orderBy("timestamp", "desc"));
+                const resultsRef = collection(db, "results");
+                
+                // Optimized Query: Only fetch documents within this 2-day period
+                const q = query(
+                    resultsRef,
+                    where("timestamp", ">=", Timestamp.fromDate(windowStart)),
+                    where("timestamp", "<", Timestamp.fromDate(currentWindowEnd)),
+                    orderBy("timestamp", "desc")
+                );
+
                 const querySnapshot = await getDocs(q);
-                allResults = querySnapshot.docs.map(doc => doc.data());
-                filteredData = [...allResults];
-                renderTable(allResults);
-                loader.classList.add('hidden');
+                const newData = querySnapshot.docs.map(doc => doc.data());
+
+                if (newData.length === 0) {
+                    alert("No more results found in this period.");
+                }
+
+                allResults = [...allResults, ...newData];
+                
+                // Move the window end pointer back for the next click
+                currentWindowEnd = windowStart;
+
+                applyFilters(); // Re-apply local filters to the newly combined dataset
             } catch (error) {
                 console.error(error);
-                loader.innerText = "Error loading data. Check internet connection.";
+                alert("Query Error: Ensure you have created the required Composite Index in Firebase Console.");
+            } finally {
+                loader.classList.add('hidden');
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
             }
         };
 
@@ -118,10 +157,8 @@
             const distInput = document.getElementById('filterDist').value.toLowerCase();
             const search = document.getElementById('filterName').value.toLowerCase();
 
-            filteredData = allResults.filter(r => {
-                // Check both r.district and r.dist for filtering
+            const filteredData = allResults.filter(r => {
                 const districtValue = (r.district || r.dist || "").toLowerCase();
-                
                 return (r.quizId || "").toLowerCase().includes(qId) &&
                        districtValue.includes(distInput) &&
                        ((r.name || "").toLowerCase().includes(search) || (r.mobile || "").includes(search));
@@ -134,8 +171,7 @@
             body.innerHTML = '';
 
             data.forEach(item => {
-                const date = item.timestamp?.toDate ? item.timestamp.toDate().toLocaleString() : "N/A";
-                // Cross-check district vs dist
+                const date = item.timestamp?.toDate ? item.timestamp.toDate().toLocaleString() : "—";
                 const displayDistrict = item.district || item.dist || "—";
                 
                 const row = `
@@ -156,32 +192,12 @@
                         </td>
                     </tr>
                 `;
-                body.innerHTML += row;
+                body.insertAdjacentHTML('beforeend', row);
             });
         }
 
-        // Excel Export Logic
-        window.downloadExcel = () => {
-            if (filteredData.length === 0) return alert("No data to export!");
-
-            const excelData = filteredData.map(item => ({
-                "Date/Time": item.timestamp?.toDate ? item.timestamp.toDate().toLocaleString() : "N/A",
-                "Student Name": item.name,
-                "Mobile Number": item.mobile,
-                "District": item.district || item.dist || "N/A", // Fixed for Excel
-                "Quiz ID": item.quizId,
-                "Score": item.score,
-                "Total": item.total,
-                "Feedback": item.feedback || "No feedback"
-            }));
-
-            const worksheet = XLSX.utils.json_to_sheet(excelData);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Student Results");
-
-            const fileName = `TNSED_Results_${new Date().toISOString().slice(0,10)}.xlsx`;
-            XLSX.writeFile(workbook, fileName);
-        };
+        // Run initial load on start
+        window.fetchNextTwoDays();
     </script>
 </body>
 </html>
