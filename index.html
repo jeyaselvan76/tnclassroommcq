@@ -54,13 +54,30 @@
             break-after: avoid;
         }
 
-        .correction-card { 
-            page-break-inside: avoid; 
-            break-inside: avoid; 
-            margin-bottom: 10px; 
-            border: 1px solid #eee;
-            border-radius: 15px;
-        }
+       .correction-card { 
+    /* Critical for PDF: Prevents splitting a question and its 4 options across pages */
+    page-break-inside: avoid !important; 
+    break-inside: avoid !important;
+    
+    /* Visual styling */
+    margin-bottom: 1.5rem; 
+    border: 1px solid #e2e8f0;
+    border-radius: 15px;
+    padding: 1.5rem;
+    background-color: #fff;
+    
+    /* Ensures MathJax text inside cards behaves correctly */
+    display: block;
+    position: relative;
+}
+
+/* Force standard font rendering for Tamil inside the cards */
+.correction-card .tamil-fix, 
+.correction-card mjx-utext, 
+.correction-card mjx-c {
+    font-family: 'Segoe UI', 'Latha', sans-serif !important;
+    font-style: normal !important;
+}
 
         #pdf-watermark-main {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg);
@@ -318,32 +335,88 @@
         function backToSpecificQ(idx) { currentIdx = idx; backToQuiz(); showQuestion(); }
         function goToFeedback() { document.getElementById('section-preview').classList.add('hidden'); document.getElementById('section-feedback').classList.remove('hidden'); }
 
-        async function finalSubmitDirect() {
-            const btn = document.getElementById('final-confirm-btn'); btn.disabled = true; btn.innerText = "...";
-            const name = document.getElementById('userName').value;
-            const mobile = document.getElementById('userMobile').value;
-            const dist = document.getElementById('userDistrict').value;
-            document.getElementById('user-details-pdf').innerHTML = `<p>Name: ${name} | Mobile: ${mobile}</p><p>District: ${dist} | Date: ${new Date().toLocaleDateString()}</p>`;
-            
-            let score = 0; const correction = document.getElementById('correction-list'); correction.innerHTML = '';
-            answers.forEach((ans, i) => {
-                const correctIdx = parseInt(questions[i].correctIndex);
-                const isCorrect = (ans === correctIdx); if(isCorrect) score++;
-                const card = document.createElement('div');
-                card.className = `correction-card p-5 rounded-2xl border-l-8 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`;
-                card.innerHTML = `<p class="font-bold mb-2">${renderSafeText(questions[i].question)}</p><div class="text-sm">Your: ${renderSafeText(questions[i].options[ans])}${!isCorrect ? `<br><span class="text-green-700">Correct: ${renderSafeText(questions[i].options[correctIdx])}</span>` : ''}</div>`;
-                correction.appendChild(card);
-            });
+       async function finalSubmitDirect() {
+    const btn = document.getElementById('final-confirm-btn'); 
+    btn.disabled = true; 
+    btn.innerText = "SUBMITTING...";
 
-            try {
-                await window.addDoc(window.collection(window.db, "results"), { name, mobile, dist, feedback: document.getElementById('feedbackText').value, score, total: questions.length, timestamp: new Date(), quizId: new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026" });
-                document.getElementById('display-score').innerText = `${score}/${questions.length}`;
-                document.getElementById('section-feedback').classList.add('hidden');
-                document.getElementById('section-success').classList.remove('hidden');
-                if (window.MathJax && window.MathJax.typesetPromise) window.MathJax.typesetPromise();
-                window.scrollTo(0,0);
-            } catch (e) { alert("Error."); btn.disabled = false; }
+    const name = document.getElementById('userName').value;
+    const mobile = document.getElementById('userMobile').value;
+    const dist = document.getElementById('userDistrict').value;
+    const quizId = new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026";
+
+    // Prepare User Details for PDF
+    document.getElementById('user-details-pdf').innerHTML = `<p>Name: ${name} | Mobile: ${mobile}</p><p>District: ${dist} | Date: ${new Date().toLocaleDateString()}</p>`;
+    
+    let score = 0; 
+    const correction = document.getElementById('correction-list'); 
+    correction.innerHTML = '';
+
+    answers.forEach((ans, i) => {
+        const correctIdx = parseInt(questions[i].correctIndex);
+        const isCorrect = (ans === correctIdx); 
+        if(isCorrect) score++;
+
+        const card = document.createElement('div');
+        card.className = `correction-card p-6 rounded-2xl border-l-8 mb-6 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-50 bg-red-50'}`;
+        
+        // Build the Options HTML block
+        let optionsHtml = '<div class="mt-3 space-y-2">';
+        questions[i].options.forEach((opt, optIdx) => {
+            const label = ['A', 'B', 'C', 'D'][optIdx];
+            let statusBadge = '';
+            let borderClass = 'border-gray-200 bg-white';
+
+            if (optIdx === correctIdx) {
+                statusBadge = '<span class="ml-auto text-[9px] font-black text-green-600 bg-green-100 px-2 py-0.5 rounded uppercase">Correct</span>';
+                borderClass = 'border-green-400 bg-green-50 ring-1 ring-green-400';
+            } else if (optIdx === ans && !isCorrect) {
+                statusBadge = '<span class="ml-auto text-[9px] font-black text-red-600 bg-red-100 px-2 py-0.5 rounded uppercase">Your Choice</span>';
+                borderClass = 'border-red-400 bg-red-50';
+            }
+
+            optionsHtml += `
+                <div class="flex items-center p-2 text-xs border rounded-lg ${borderClass}">
+                    <span class="w-5 h-5 flex items-center justify-center bg-slate-800 text-white rounded-full text-[8px] font-bold mr-2">${label}</span>
+                    <span class="font-medium text-slate-700">${renderSafeText(opt)}</span>
+                    ${statusBadge}
+                </div>`;
+        });
+        optionsHtml += '</div>';
+
+        card.innerHTML = `
+            <div class="flex justify-between items-start">
+                <p class="text-[10px] font-black uppercase tracking-widest ${isCorrect ? 'text-green-600' : 'text-red-600'} mb-1">Question ${i+1}</p>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${isCorrect ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}">${isCorrect ? 'CORRECT' : 'WRONG'}</span>
+            </div>
+            <p class="font-bold text-slate-800 leading-snug">${renderSafeText(questions[i].question)}</p>
+            ${optionsHtml}
+        `;
+        correction.appendChild(card);
+    });
+
+    try {
+        await window.addDoc(window.collection(window.db, "results"), { 
+            name, mobile, dist, 
+            feedback: document.getElementById('feedbackText').value, 
+            score, total: questions.length, 
+            timestamp: new Date(), 
+            quizId: quizId 
+        });
+        document.getElementById('display-score').innerText = `${score}/${questions.length}`;
+        document.getElementById('section-feedback').classList.add('hidden');
+        document.getElementById('section-success').classList.remove('hidden');
+        
+        // Re-render MathJax on the correction sheet
+        if (window.MathJax && window.MathJax.typesetPromise) {
+            window.MathJax.typesetPromise([document.getElementById('correction-list')]);
         }
+        window.scrollTo(0,0);
+    } catch (e) { 
+        alert("Error submitting results."); 
+        btn.disabled = false; 
+    }
+}
 
         window.downloadCorrectionPDF = function() {
             const el = document.getElementById('pdf-content');
