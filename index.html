@@ -25,14 +25,12 @@
     <style>
         body { -webkit-tap-highlight-color: transparent; font-family: sans-serif; background-color: #f8fafc; }
         
-        /* 1. TAMIL FONT FIX - Prevents broken/stretched letters in formulas */
         .tamil-fix, mjx-utext, mjx-c {
             font-family: 'Segoe UI', 'Latha', 'Tamil Sangam MN', sans-serif !important;
             font-style: normal !important;
             display: inline-block !important;
         }
 
-        /* 2. DASHBOARD & PALETTE STYLES */
         .stat-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 10px; text-align: center; }
         .palette-btn { width: 35px; height: 35px; border-radius: 8px; font-weight: 800; font-size: 12px; transition: 0.2s; cursor: pointer; }
         .p-unanswered { background: #f1f5f9; color: #94a3b8; }
@@ -45,7 +43,6 @@
         
         .quiz-footer { text-align: center; padding: 10px; font-size: 10px; font-weight: 900; letter-spacing: 2px; color: #1e3a8a; opacity: 0.5; text-transform: uppercase; }
 
-        /* 3. PDF PAGE BREAK FIXES - Resolves cutoff issues seen in screenshots */
         #pdf-content { background: white !important; }
         #pdf-header-brand, #pdf-footer-brand { display: none; }
         
@@ -54,42 +51,33 @@
             break-after: avoid;
         }
 
-       .correction-card { 
-    /* Critical for PDF: Prevents splitting a question and its 4 options across pages */
-    page-break-inside: avoid !important; 
-    break-inside: avoid !important;
-    
-    /* Visual styling */
-    margin-bottom: 1.5rem; 
-    border: 1px solid #e2e8f0;
-    border-radius: 15px;
-    padding: 1.5rem;
-    background-color: #fff;
-    
-    /* Ensures MathJax text inside cards behaves correctly */
-    display: block;
-    position: relative;
-}
+        .correction-card { 
+            page-break-inside: avoid !important; 
+            break-inside: avoid !important;
+            margin-bottom: 1.5rem; 
+            border: 1px solid #e2e8f0;
+            border-radius: 15px;
+            padding: 1.5rem;
+            background-color: #fff;
+            display: block;
+            position: relative;
+        }
 
-/* Force standard font rendering for Tamil inside the cards */
-.correction-card .tamil-fix, 
-.correction-card mjx-utext, 
-.correction-card mjx-c {
-    font-family: 'Segoe UI', 'Latha', sans-serif !important;
-    font-style: normal !important;
-}
+        .correction-card .tamil-fix, .correction-card mjx-utext, .correction-card mjx-c {
+            font-family: 'Segoe UI', 'Latha', sans-serif !important;
+            font-style: normal !important;
+        }
 
         #pdf-watermark-main {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg);
             font-size: 5rem; color: rgba(0, 0, 0, 0.05) !important; font-weight: 900; z-index: 9999; white-space: nowrap; pointer-events: none;
         }
 
-/* Styling for Question and Option text to support line breaks */
-#q-text, #options-list button div {
-    white-space: normal !important;
-    line-height: 1.6;
-    word-wrap: break-word;
-}
+        #q-text, #options-list button div {
+            white-space: normal !important;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
     </style>
 </head>
 <body class="antialiased min-h-screen">
@@ -113,10 +101,10 @@
     </div>
 
     <div id="section-quiz" class="hidden min-h-screen p-4 pb-48 bg-white">
-        <div class="max-w-4xl mx-auto grid grid-cols-4 gap-2 mb-6">
+        <div class="max-w-4xl mx-auto grid grid-cols-4 gap-2 mb-6 text-slate-600">
             <div class="stat-card"><p class="text-[9px] font-bold uppercase">Total</p><p id="stat-total" class="font-black">0</p></div>
             <div class="stat-card"><p class="text-[9px] font-bold text-green-500 uppercase">Done</p><p id="stat-answered" class="font-black text-green-600">0</p></div>
-            <div class="stat-card"><p class="text-[9px] font-bold text-orange-500 uppercase">Skip</p><p id="stat-skipped" class="font-black text-orange-600">0</p></div>
+            <div class="stat-card"><p class="text-[9px] font-bold text-orange-500 uppercase">SKIPPED</p><p id="stat-skipped" class="font-black text-orange-600">0</p></div>
             <div class="stat-card"><p class="text-[9px] font-bold uppercase">Left</p><p id="stat-left" class="font-black">0</p></div>
         </div>
 
@@ -135,9 +123,9 @@
 
         <div class="fixed bottom-0 left-0 right-0 p-4 flex justify-center z-40">
             <div class="w-full max-w-lg glass-nav rounded-3xl p-3 flex justify-between gap-2 shadow-2xl">
-                <button onclick="prevQuestion()" class="flex-1 py-4 bg-gray-100 rounded-2xl font-bold text-xs">PREV</button>
+                <button onclick="prevQuestion()" class="flex-1 py-4 bg-gray-100 text-gray-500 rounded-2xl font-bold text-xs">PREV</button>
                 <button onclick="skipQuestion()" class="flex-1 py-4 bg-orange-100 text-orange-600 rounded-2xl font-bold text-xs">SKIP</button>
-                <button id="btn-main" onclick="nextOrPreview()" class="flex-[2] py-4 bg-cyan-400 text-[#1e3a8a] rounded-2xl font-black text-xs uppercase">Next</button>
+                <button id="btn-main" onclick="nextOrPreview()" class="flex-[2] py-4 bg-[#1e3a8a] text-white rounded-2xl font-black text-xs uppercase shadow-lg">Next</button>
             </div>
         </div>
     </div>
@@ -207,15 +195,12 @@
         const tnDistricts = ["Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kancheepuram", "Kanniyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivagangai", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"];
         let questions = []; let currentIdx = 0; let answers = []; let skipped = [];
 
-    function renderSafeText(text) {
-    if (!text) return "";
-    
-    // 1. Convert new lines (\n) from Google Sheet into HTML line breaks (<br>)
-    let formatted = text.replace(/\r?\n/g, '<br>');
+        function renderSafeText(text) {
+            if (!text) return "";
+            let formatted = text.replace(/\r?\n/g, '<br>');
+            return formatted.replace(/[\u0b80-\u0bff]+/g, (match) => `<span class="tamil-fix">${match}</span>`);
+        }
 
-    // 2. Detect Tamil characters and wrap them in the protective CSS class
-    return formatted.replace(/[\u0b80-\u0bff]+/g, (match) => `<span class="tamil-fix">${match}</span>`);
-}
         document.addEventListener("DOMContentLoaded", () => {
             const quizId = new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026";
             const distSelect = document.getElementById('userDistrict');
@@ -240,58 +225,38 @@
             } catch (e) { alert("Load Error."); }
         }
 
-      function showQuestion() {
-    const q = questions[currentIdx];
-    
-    // Update Question Text
-    document.getElementById('q-text').innerHTML = renderSafeText(q.question);
-    
-    // Update Image Container
-    const qImg = document.getElementById('q-image');
-    if (q.imageUrl && q.imageUrl.trim() !== "") { 
-        qImg.src = q.imageUrl; 
-        document.getElementById('img-container').classList.remove('hidden'); 
-    } else { 
-        document.getElementById('img-container').classList.add('hidden'); 
-    }
-    
-    // Generate Options List
-    const list = document.getElementById('options-list');
-    list.innerHTML = '';
-    const labels = ['A', 'B', 'C', 'D'];
-    
-    q.options.forEach((opt, i) => {
-        const btn = document.createElement('button');
-        
-        // Dynamic class setting based on selection
-        const isSelected = answers[currentIdx] === i;
-        btn.className = `w-full p-4 flex items-center bg-white border-2 rounded-2xl text-left transition ${isSelected ? 'option-selected' : 'border-gray-100'}`;
-        
-        btn.innerHTML = `
-            <span class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-[#1e3a8a] text-white rounded-full text-[10px] font-black mr-4">${labels[i]}</span>
-            <div class="flex-grow font-bold text-gray-700">${renderSafeText(opt)}</div>
-        `;
-        
-        btn.onclick = () => { 
-            answers[currentIdx] = i; 
-            skipped[currentIdx] = false; 
-            showQuestion(); 
-        };
-        list.appendChild(btn);
-    });
-
-    // Update Navigation Button Text
-    document.getElementById('btn-main').innerText = (currentIdx === questions.length - 1) ? "Preview" : "Next";
-    
-    // Refresh the Navigator Palette
-    updatePalette();
-
-    // CRITICAL: Force MathJax to re-render the entire quiz section
-    if (window.MathJax && window.MathJax.typesetPromise) {
-        window.MathJax.typesetPromise([document.getElementById('section-quiz')])
-            .catch((err) => console.error("MathJax rendering error: ", err.message));
-    }
-}
+        function showQuestion() {
+            const q = questions[currentIdx];
+            document.getElementById('q-text').innerHTML = renderSafeText(q.question);
+            const qImg = document.getElementById('q-image');
+            if(q.imageUrl && q.imageUrl.trim() !== "") { 
+                qImg.src = q.imageUrl; 
+                document.getElementById('img-container').classList.remove('hidden'); 
+            } else { 
+                document.getElementById('img-container').classList.add('hidden'); 
+            }
+            
+            const list = document.getElementById('options-list');
+            list.innerHTML = '';
+            const labels = ['A', 'B', 'C', 'D'];
+            
+            q.options.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                const isSelected = answers[currentIdx] === i;
+                btn.className = `w-full p-4 flex items-center bg-white border-2 rounded-2xl text-left transition ${isSelected ? 'option-selected' : 'border-gray-100'}`;
+                btn.innerHTML = `
+                    <span class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-[#1e3a8a] text-white rounded-full text-[10px] font-black mr-4">${labels[i]}</span>
+                    <div class="flex-grow font-bold text-gray-700">${renderSafeText(opt)}</div>
+                `;
+                btn.onclick = () => { answers[currentIdx] = i; skipped[currentIdx] = false; showQuestion(); };
+                list.appendChild(btn);
+            });
+            document.getElementById('btn-main').innerText = (currentIdx === questions.length - 1) ? "Preview" : "Next";
+            updatePalette();
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise([document.getElementById('section-quiz')]);
+            }
+        }
 
         function skipQuestion() {
             if (answers[currentIdx] === null) skipped[currentIdx] = true;
@@ -312,7 +277,8 @@
                 const btn = document.createElement('button');
                 btn.innerText = i + 1;
                 let s = 'p-unanswered';
-                if (answers[i] !== null) { s = 'p-answered'; ans++; } else if (skipped[i]) { s = 'p-skipped'; skp++; }
+                if (answers[i] !== null) { s = 'p-answered'; ans++; } 
+                else if (skipped[i]) { s = 'p-skipped'; skp++; }
                 btn.className = `palette-btn ${s} ${i === currentIdx ? 'p-current' : ''}`;
                 btn.onclick = () => { currentIdx = i; showQuestion(); };
                 palette.appendChild(btn);
@@ -345,110 +311,58 @@
         function backToSpecificQ(idx) { currentIdx = idx; backToQuiz(); showQuestion(); }
         function goToFeedback() { document.getElementById('section-preview').classList.add('hidden'); document.getElementById('section-feedback').classList.remove('hidden'); }
 
-       async function finalSubmitDirect() {
-    const btn = document.getElementById('final-confirm-btn'); 
-    btn.disabled = true; 
-    btn.innerText = "SUBMITTING...";
+        async function finalSubmitDirect() {
+            const btn = document.getElementById('final-confirm-btn'); btn.disabled = true; btn.innerText = "...";
+            const name = document.getElementById('userName').value;
+            const mobile = document.getElementById('userMobile').value;
+            const dist = document.getElementById('userDistrict').value;
+            const quizId = new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026";
+            document.getElementById('user-details-pdf').innerHTML = `<p>Name: ${name} | Mobile: ${mobile}</p><p>District: ${dist} | Date: ${new Date().toLocaleDateString()}</p>`;
+            
+            let score = 0; const correction = document.getElementById('correction-list'); correction.innerHTML = '';
+            answers.forEach((ans, i) => {
+                const correctIdx = parseInt(questions[i].correctIndex);
+                const isCorrect = (ans === correctIdx); if(isCorrect) score++;
 
-    const name = document.getElementById('userName').value;
-    const mobile = document.getElementById('userMobile').value;
-    const dist = document.getElementById('userDistrict').value;
-    const quizId = new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026";
+                const card = document.createElement('div');
+                card.className = `correction-card p-6 rounded-2xl border-l-8 mb-6 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-50 bg-red-50'}`;
+                
+                let optionsHtml = '<div class="mt-3 space-y-2">';
+                questions[i].options.forEach((opt, optIdx) => {
+                    const label = ['A', 'B', 'C', 'D'][optIdx];
+                    let statusBadge = '';
+                    let borderClass = 'border-gray-200 bg-white';
+                    if (optIdx === correctIdx) {
+                        statusBadge = '<span class="ml-auto text-[9px] font-black text-green-600 bg-green-100 px-2 py-0.5 rounded uppercase">Correct</span>';
+                        borderClass = 'border-green-400 bg-green-50 ring-1 ring-green-400';
+                    } else if (optIdx === ans && !isCorrect) {
+                        statusBadge = '<span class="ml-auto text-[9px] font-black text-red-600 bg-red-100 px-2 py-0.5 rounded uppercase">Your Choice</span>';
+                        borderClass = 'border-red-400 bg-red-50';
+                    }
+                    optionsHtml += `<div class="flex items-center p-2 text-xs border rounded-lg ${borderClass}"><span class="w-5 h-5 flex items-center justify-center bg-slate-800 text-white rounded-full text-[8px] font-bold mr-2">${label}</span><span class="font-medium text-slate-700">${renderSafeText(opt)}</span>${statusBadge}</div>`;
+                });
+                optionsHtml += '</div>';
 
-    // Prepare User Details for PDF
-    document.getElementById('user-details-pdf').innerHTML = `<p>Name: ${name} | Mobile: ${mobile}</p><p>District: ${dist} | Date: ${new Date().toLocaleDateString()}</p>`;
-    
-    let score = 0; 
-    const correction = document.getElementById('correction-list'); 
-    correction.innerHTML = '';
+                card.innerHTML = `<div class="flex justify-between items-start"><p class="text-[10px] font-black uppercase tracking-widest ${isCorrect ? 'text-green-600' : 'text-red-600'} mb-1">Question ${i+1}</p><span class="text-[10px] font-bold px-2 py-0.5 rounded ${isCorrect ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}">${isCorrect ? 'CORRECT' : 'WRONG'}</span></div><p class="font-bold text-slate-800 leading-snug">${renderSafeText(questions[i].question)}</p>${optionsHtml}`;
+                correction.appendChild(card);
+            });
 
-    answers.forEach((ans, i) => {
-        const correctIdx = parseInt(questions[i].correctIndex);
-        const isCorrect = (ans === correctIdx); 
-        if(isCorrect) score++;
-
-        const card = document.createElement('div');
-        card.className = `correction-card p-6 rounded-2xl border-l-8 mb-6 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-50 bg-red-50'}`;
-        
-        // Build the Options HTML block
-        let optionsHtml = '<div class="mt-3 space-y-2">';
-        questions[i].options.forEach((opt, optIdx) => {
-            const label = ['A', 'B', 'C', 'D'][optIdx];
-            let statusBadge = '';
-            let borderClass = 'border-gray-200 bg-white';
-
-            if (optIdx === correctIdx) {
-                statusBadge = '<span class="ml-auto text-[9px] font-black text-green-600 bg-green-100 px-2 py-0.5 rounded uppercase">Correct</span>';
-                borderClass = 'border-green-400 bg-green-50 ring-1 ring-green-400';
-            } else if (optIdx === ans && !isCorrect) {
-                statusBadge = '<span class="ml-auto text-[9px] font-black text-red-600 bg-red-100 px-2 py-0.5 rounded uppercase">Your Choice</span>';
-                borderClass = 'border-red-400 bg-red-50';
-            }
-
-            optionsHtml += `
-                <div class="flex items-center p-2 text-xs border rounded-lg ${borderClass}">
-                    <span class="w-5 h-5 flex items-center justify-center bg-slate-800 text-white rounded-full text-[8px] font-bold mr-2">${label}</span>
-                    <span class="font-medium text-slate-700">${renderSafeText(opt)}</span>
-                    ${statusBadge}
-                </div>`;
-        });
-        optionsHtml += '</div>';
-
-        card.innerHTML = `
-            <div class="flex justify-between items-start">
-                <p class="text-[10px] font-black uppercase tracking-widest ${isCorrect ? 'text-green-600' : 'text-red-600'} mb-1">Question ${i+1}</p>
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${isCorrect ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}">${isCorrect ? 'CORRECT' : 'WRONG'}</span>
-            </div>
-            <p class="font-bold text-slate-800 leading-snug">${renderSafeText(questions[i].question)}</p>
-            ${optionsHtml}
-        `;
-        correction.appendChild(card);
-    });
-
-    try {
-        await window.addDoc(window.collection(window.db, "results"), { 
-            name, mobile, dist, 
-            feedback: document.getElementById('feedbackText').value, 
-            score, total: questions.length, 
-            timestamp: new Date(), 
-            quizId: quizId 
-        });
-        document.getElementById('display-score').innerText = `${score}/${questions.length}`;
-        document.getElementById('section-feedback').classList.add('hidden');
-        document.getElementById('section-success').classList.remove('hidden');
-        
-        // Re-render MathJax on the correction sheet
-        if (window.MathJax && window.MathJax.typesetPromise) {
-            window.MathJax.typesetPromise([document.getElementById('correction-list')]);
+            try {
+                await window.addDoc(window.collection(window.db, "results"), { name, mobile, dist, feedback: document.getElementById('feedbackText').value, score, total: questions.length, timestamp: new Date(), quizId: quizId });
+                document.getElementById('display-score').innerText = `${score}/${questions.length}`;
+                document.getElementById('section-feedback').classList.add('hidden');
+                document.getElementById('section-success').classList.remove('hidden');
+                if (window.MathJax && window.MathJax.typesetPromise) window.MathJax.typesetPromise([document.getElementById('correction-list')]);
+                window.scrollTo(0,0);
+            } catch (e) { alert("Error."); btn.disabled = false; }
         }
-        window.scrollTo(0,0);
-    } catch (e) { 
-        alert("Error submitting results."); 
-        btn.disabled = false; 
-    }
-}
 
         window.downloadCorrectionPDF = function() {
             const el = document.getElementById('pdf-content');
-            const h = document.getElementById('pdf-header-brand'); 
-            const f = document.getElementById('pdf-footer-brand'); 
-            const w = document.getElementById('pdf-watermark-main');
-            
-            // Show hidden components for capture
+            const h = document.getElementById('pdf-header-brand'); const f = document.getElementById('pdf-footer-brand'); const w = document.getElementById('pdf-watermark-main');
             h.style.display = 'block'; f.style.display = 'block'; w.style.display = 'block';
-
-            const opt = { 
-                margin: [10, 5, 10, 5], 
-                filename: `Report_${document.getElementById('userName').value}.pdf`, 
-                image: { type: 'jpeg', quality: 0.98 }, 
-                html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, 
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                pagebreak: { mode: 'legacy' } 
-            };
-
-            html2pdf().set(opt).from(el).save().then(() => { 
-                h.style.display = 'none'; f.style.display = 'none'; w.style.display = 'none'; 
-            });
+            const opt = { margin: [10, 5, 10, 5], filename: `Report_${document.getElementById('userName').value}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: 'legacy' } };
+            html2pdf().set(opt).from(el).save().then(() => { h.style.display = 'none'; f.style.display = 'none'; w.style.display = 'none'; });
         };
     </script>
 </body>
