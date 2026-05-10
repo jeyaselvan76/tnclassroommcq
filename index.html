@@ -83,6 +83,13 @@
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg);
             font-size: 5rem; color: rgba(0, 0, 0, 0.05) !important; font-weight: 900; z-index: 9999; white-space: nowrap; pointer-events: none;
         }
+
+/* Styling for Question and Option text to support line breaks */
+#q-text, #options-list button div {
+    white-space: normal !important;
+    line-height: 1.6;
+    word-wrap: break-word;
+}
     </style>
 </head>
 <body class="antialiased min-h-screen">
@@ -200,11 +207,14 @@
         const tnDistricts = ["Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kancheepuram", "Kanniyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivagangai", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"];
         let questions = []; let currentIdx = 0; let answers = []; let skipped = [];
 
-      function renderSafeText(text) {
+    function renderSafeText(text) {
     if (!text) return "";
-    // Detects Tamil characters and wraps them in the protective CSS class
-    // This allows you to remove manual \text{} tags from your Google Sheet
-    return text.replace(/[\u0b80-\u0bff]+/g, (match) => `<span class="tamil-fix">${match}</span>`);
+    
+    // 1. Convert new lines (\n) from Google Sheet into HTML line breaks (<br>)
+    let formatted = text.replace(/\r?\n/g, '<br>');
+
+    // 2. Detect Tamil characters and wrap them in the protective CSS class
+    return formatted.replace(/[\u0b80-\u0bff]+/g, (match) => `<span class="tamil-fix">${match}</span>`);
 }
         document.addEventListener("DOMContentLoaded", () => {
             const quizId = new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026";
