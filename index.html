@@ -210,24 +210,43 @@
             tnDistricts.forEach(d => distSelect.add(new Option(d, d)));
         });
 
-        async function startQuiz() {
-            const name = document.getElementById('userName').value.trim();
-            const mobile = document.getElementById('userMobile').value.trim();
-            const dist = document.getElementById('userDistrict').value;
-            if(!name || mobile.length !== 10 || !dist) return alert("Details invalid.");
+      async function startQuiz() {
+    const name = document.getElementById('userName').value.trim();
+    const mobile = document.getElementById('userMobile').value.trim();
+    const dist = document.getElementById('userDistrict').value;
 
-            try {
-                const qId = new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026";
-                const qSnap = await window.getDocs(window.query(window.collection(window.db, "quizzes", qId, "questions"), window.orderBy("qno")));
-                questions = qSnap.docs.map(doc => doc.data());
+    if(!name || mobile.length !== 10 || !dist) return alert("Details invalid.");
+
+    try {
+        const qId = new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026";
+        const qSnap = await window.getDocs(window.query(window.collection(window.db, "quizzes", qId, "questions"), window.orderBy("qno")));
+        questions = qSnap.docs.map(doc => doc.data());
+
+        if (questions.length === 0) return alert("Quiz not found.");
+
+        // Save login session
+        localStorage.setItem('tnSession', JSON.stringify({name, mobile, dist, qId}));
+
+        // CHECK FOR SAVED ANSWERS (RESTORE PROGRESS)
+        const savedAnswers = localStorage.getItem('tnAnswers');
+        if (savedAnswers) {
+            const restored = JSON.parse(savedAnswers);
+            // Only restore if the number of questions matches
+            if (restored.length === questions.length) {
+                answers = restored;
+            } else {
                 answers = new Array(questions.length).fill(null);
-                skipped = new Array(questions.length).fill(false);
-                document.getElementById('section-reg').classList.add('hidden');
-                document.getElementById('section-quiz').classList.remove('hidden');
-                showQuestion();
-            } catch (e) { alert("Load Error."); }
+            }
+        } else {
+            answers = new Array(questions.length).fill(null);
         }
 
+        skipped = new Array(questions.length).fill(false);
+        document.getElementById('section-reg').classList.add('hidden');
+        document.getElementById('section-quiz').classList.remove('hidden');
+        showQuestion();
+    } catch (e) { alert("Load Error."); }
+}
         function showQuestion() {
             const q = questions[currentIdx];
             document.getElementById('q-text').innerHTML = renderSafeText(q.question);
@@ -251,7 +270,15 @@
                     <span class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-[#1e3a8a] text-white rounded-full text-[10px] font-black mr-4">${labels[i]}</span>
                     <div class="flex-grow font-bold text-gray-700">${renderSafeText(opt)}</div>
                 `;
-                btn.onclick = () => { answers[currentIdx] = i; skipped[currentIdx] = false; showQuestion(); };
+               btn.onclick = () => {
+    answers[currentIdx] = i;
+    skipped[currentIdx] = false;
+
+    // NEW: Save the answers to the phone's memory immediately
+    localStorage.setItem('tnAnswers', JSON.stringify(answers));
+
+    showQuestion();
+};
                 list.appendChild(btn);
             });
             document.getElementById('btn-main').innerText = (currentIdx === questions.length - 1) ? "Preview" : "Next";
@@ -314,60 +341,96 @@
         function backToSpecificQ(idx) { currentIdx = idx; backToQuiz(); showQuestion(); }
         function goToFeedback() { document.getElementById('section-preview').classList.add('hidden'); document.getElementById('section-feedback').classList.remove('hidden'); }
 
-        async function finalSubmitDirect() {
-            const btn = document.getElementById('final-confirm-btn');
-            btn.disabled = true; btn.innerText = "...";
-            const name = document.getElementById('userName').value;
-            const mobile = document.getElementById('userMobile').value;
-            const dist = document.getElementById('userDistrict').value;
-            const quizId = new URLSearchParams(window.location.search).get('id') || "QUIZ";
-            const subjectTitle = quizId.replace(/_/g, ' ');
+       async function finalSubmitDirect() {
+    const btn = document.getElementById('final-confirm-btn');
+    btn.disabled = true;
+    btn.innerText = "SUBMITTING...";
 
-            document.getElementById('user-details-pdf').innerHTML = `
-                <div style="margin-bottom: 8px;">
-                    <p style="font-size: 14px; color: #1e3a8a; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid #ddd; padding-bottom: 4px;">Subject: ${subjectTitle}</p>
-                </div>
-                <p>Name: ${name} | Mobile: ${mobile}</p>
-                <p>District: ${dist} | Date: ${new Date().toLocaleDateString()}</p>
-            `;
+    const name = document.getElementById('userName').value;
+    const mobile = document.getElementById('userMobile').value;
+    const dist = document.getElementById('userDistrict').value;
+    const quizId = new URLSearchParams(window.location.search).get('id') || "QUIZ";
+    const subjectTitle = quizId.replace(/_/g, ' ');
 
-            let score = 0; const correction = document.getElementById('correction-list'); correction.innerHTML = '';
-            answers.forEach((ans, i) => {
-                const correctIdx = parseInt(questions[i].correctIndex);
-                const isCorrect = (ans === correctIdx); if(isCorrect) score++;
+    // Update PDF view with student details
+    document.getElementById('user-details-pdf').innerHTML = `
+        <div style="margin-bottom: 8px;">
+            <p style="font-size: 14px; color: #1e3a8a; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid #ddd; padding-bottom: 4px;">Subject: ${subjectTitle}</p>
+        </div>
+        <p>Name: ${name} | Mobile: ${mobile}</p>
+        <p>District: ${dist} | Date: ${new Date().toLocaleDateString()}</p>
+    `;
 
-                const card = document.createElement('div');
-                card.className = `correction-card p-6 rounded-2xl border-l-8 mb-6 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-50 bg-red-50'}`;
+    let score = 0;
+    const correction = document.getElementById('correction-list');
+    correction.innerHTML = '';
 
-                let optionsHtml = '<div class="mt-3 space-y-2">';
-                questions[i].options.forEach((opt, optIdx) => {
-                    const label = ['A', 'B', 'C', 'D'][optIdx];
-                    let statusBadge = '';
-                    let borderClass = 'border-gray-200 bg-white';
-                    if (optIdx === correctIdx) {
-                        statusBadge = '<span class="ml-auto text-[9px] font-black text-green-600 bg-green-100 px-2 py-0.5 rounded uppercase">Correct</span>';
-                        borderClass = 'border-green-400 bg-green-50 ring-1 ring-green-400';
-                    } else if (optIdx === ans && !isCorrect) {
-                        statusBadge = '<span class="ml-auto text-[9px] font-black text-red-600 bg-red-100 px-2 py-0.5 rounded uppercase">Your Choice</span>';
-                        borderClass = 'border-red-400 bg-red-50';
-                    }
-                    optionsHtml += `<div class="flex items-center p-2 text-xs border rounded-lg ${borderClass}"><span class="w-5 h-5 flex items-center justify-center bg-slate-800 text-white rounded-full text-[8px] font-bold mr-2">${label}</span><span class="font-medium text-slate-700">${renderSafeText(opt)}</span>${statusBadge}</div>`;
-                });
-                optionsHtml += '</div>';
+    // Generate the correction cards
+    answers.forEach((ans, i) => {
+        const correctIdx = parseInt(questions[i].correctIndex);
+        const isCorrect = (ans === correctIdx);
+        if(isCorrect) score++;
 
-                card.innerHTML = `<div class="flex justify-between items-start"><p class="text-[10px] font-black uppercase tracking-widest ${isCorrect ? 'text-green-600' : 'text-red-600'} mb-1">Question ${i+1}</p><span class="text-[10px] font-bold px-2 py-0.5 rounded ${isCorrect ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}">${isCorrect ? 'CORRECT' : 'WRONG'}</span></div><p class="font-bold text-slate-800 leading-snug">${renderSafeText(questions[i].question)}</p>${optionsHtml}`;
-                correction.appendChild(card);
-            });
+        const card = document.createElement('div');
+        card.className = `correction-card p-6 rounded-2xl border-l-8 mb-6 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-50 bg-red-50'}`;
 
-            try {
-                await window.addDoc(window.collection(window.db, "results"), { name, mobile, dist, feedback: document.getElementById('feedbackText').value, score, total: questions.length, timestamp: new Date(), quizId: quizId });
-                document.getElementById('display-score').innerText = `${score}/${questions.length}`;
-                document.getElementById('section-feedback').classList.add('hidden');
-                document.getElementById('section-success').classList.remove('hidden');
-                if (window.MathJax && window.MathJax.typesetPromise) window.MathJax.typesetPromise([document.getElementById('correction-list')]);
-                window.scrollTo(0,0);
-            } catch (e) { alert("Error."); btn.disabled = false; }
+        let optionsHtml = '<div class="mt-3 space-y-2">';
+        questions[i].options.forEach((opt, optIdx) => {
+            const label = ['A', 'B', 'C', 'D'][optIdx];
+            let statusBadge = '';
+            let borderClass = 'border-gray-200 bg-white';
+
+            if (optIdx === correctIdx) {
+                statusBadge = '<span class="ml-auto text-[9px] font-black text-green-600 bg-green-100 px-2 py-0.5 rounded uppercase">Correct</span>';
+                borderClass = 'border-green-400 bg-green-50 ring-1 ring-green-400';
+            } else if (optIdx === ans && !isCorrect) {
+                statusBadge = '<span class="ml-auto text-[9px] font-black text-red-600 bg-red-100 px-2 py-0.5 rounded uppercase">Your Choice</span>';
+                borderClass = 'border-red-400 bg-red-50';
+            }
+            optionsHtml += `<div class="flex items-center p-2 text-xs border rounded-lg ${borderClass}"><span class="w-5 h-5 flex items-center justify-center bg-slate-800 text-white rounded-full text-[8px] font-bold mr-2">${label}</span><span class="font-medium text-slate-700">${renderSafeText(opt)}</span>${statusBadge}</div>`;
+        });
+        optionsHtml += '</div>';
+
+        card.innerHTML = `<div class="flex justify-between items-start"><p class="text-[10px] font-black uppercase tracking-widest ${isCorrect ? 'text-green-600' : 'text-red-600'} mb-1">Question ${i+1}</p><span class="text-[10px] font-bold px-2 py-0.5 rounded ${isCorrect ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}">${isCorrect ? 'CORRECT' : 'WRONG'}</span></div><p class="font-bold text-slate-800 leading-snug">${renderSafeText(questions[i].question)}</p>${optionsHtml}`;
+        correction.appendChild(card);
+    });
+
+    try {
+        const feedbackVal = document.getElementById('feedbackText') ? document.getElementById('feedbackText').value : "";
+
+        // Upload result to Firestore
+        await window.addDoc(window.collection(window.db, "results"), {
+            name,
+            mobile,
+            dist,
+            feedback: feedbackVal,
+            score,
+            total: questions.length,
+            timestamp: new Date(),
+            quizId: quizId
+        });
+
+        // --- NEW: CLEAR SESSION DATA ---
+        // This ensures the phone memory is wiped so the next student starts fresh
+        localStorage.removeItem('tnAnswers');
+        localStorage.removeItem('tnClassroomSession');
+        // -------------------------------
+
+        document.getElementById('display-score').innerText = `${score}/${questions.length}`;
+        document.getElementById('section-feedback').classList.add('hidden');
+        document.getElementById('section-success').classList.remove('hidden');
+
+        if (window.MathJax && window.MathJax.typesetPromise) {
+            window.MathJax.typesetPromise([document.getElementById('correction-list')]);
         }
+        window.scrollTo(0,0);
+    } catch (e) {
+        console.error("Submission error: ", e);
+        alert("Error submitting results. Please check your connection.");
+        btn.disabled = false;
+        btn.innerText = "Confirm Submit";
+    }
+}
 
         window.downloadCorrectionPDF = function() {
             const el = document.getElementById('pdf-content');
