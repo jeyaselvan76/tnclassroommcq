@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TNSED MCQ Portal | WWW.TNCLASSROOM.COM</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <script>
@@ -87,12 +88,12 @@
     </div>
 
     <div id="section-reg" class="flex items-center justify-center min-h-[85vh] p-4">
-        <div class="w-full max-w-md bg-white rounded-[2.5rem] p-8 shadow-2xl border-t-8 border-[#1e3a8a]">
+        <div class="w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl border-t-8 border-[#1e3a8a]">
             <h2 class="text-2xl font-black text-[#1e3a8a] text-center mb-6 uppercase">Login</h2>
             <div class="space-y-4">
-                <input type="text" id="userName" class="w-full p-4 bg-gray-50 border-0 rounded-2xl outline-none" placeholder="Student Name">
-                <input type="tel" id="userMobile" maxlength="10" class="w-full p-4 bg-gray-50 border-0 rounded-2xl outline-none" placeholder="Mobile Number">
-                <select id="userDistrict" class="w-full p-4 bg-gray-50 border-0 rounded-2xl outline-none appearance-none">
+                <input type="text" id="userName" class="w-full p-4 bg-gray-50 border-0 rounded-2xl outline-none border border-gray-200" placeholder="Student Name">
+                <input type="tel" id="userMobile" maxlength="10" class="w-full p-4 bg-gray-50 border-0 rounded-2xl outline-none border border-gray-200" placeholder="Mobile Number">
+                <select id="userDistrict" class="w-full p-4 bg-gray-50 border-0 rounded-2xl outline-none appearance-none border border-gray-200">
                     <option value="">Select District</option>
                 </select>
                 <button onclick="startQuiz()" class="w-full bg-[#1e3a8a] text-white py-4 rounded-2xl font-black shadow-lg">START ASSESSMENT</button>
@@ -109,12 +110,12 @@
         </div>
 
         <div class="max-w-4xl mx-auto space-y-6">
-            <div class="bg-blue-50 rounded-[2.5rem] p-6 md:p-10 border border-blue-100">
+            <div class="bg-blue-50 rounded-3xl p-6 md:p-10 border border-blue-100">
                 <div id="img-container" class="hidden mb-4 text-center"><img id="q-image" src="" class="max-h-64 mx-auto rounded-2xl shadow-sm bg-white"></div>
                 <h2 id="q-text" class="text-lg md:text-xl font-bold text-gray-800 leading-relaxed"></h2>
             </div>
             <div id="options-list" class="space-y-3"></div>
-            <div class="bg-gray-50 p-6 rounded-[2rem] border border-gray-100">
+            <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100">
                 <p class="text-[10px] font-black text-gray-400 uppercase mb-4 tracking-widest">Navigator</p>
                 <div id="question-palette" class="flex flex-wrap gap-2"></div>
             </div>
@@ -142,9 +143,9 @@
     </div>
 
     <div id="section-feedback" class="hidden flex items-center justify-center min-h-[90vh] p-4">
-        <div class="w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-2xl text-center">
+        <div class="w-full max-w-md bg-white rounded-3xl p-10 shadow-2xl text-center">
             <h2 class="text-2xl font-black text-gray-800 mb-6 uppercase">Feedback</h2>
-            <textarea id="feedbackText" class="w-full p-5 bg-gray-50 border-0 rounded-3xl h-32 mb-6 outline-none" placeholder="Share suggestions..."></textarea>
+            <textarea id="feedbackText" class="w-full p-5 bg-gray-50 border-0 rounded-3xl h-32 mb-6 outline-none border" placeholder="Share suggestions..."></textarea>
             <button id="final-confirm-btn" onclick="finalSubmitDirect()" class="w-full bg-[#1e3a8a] text-white py-5 rounded-3xl font-black uppercase shadow-xl">Confirm Submit</button>
         </div>
     </div>
@@ -203,50 +204,54 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             const urlParams = new URLSearchParams(window.location.search);
-            const quizId = urlParams.get('id') || "SSLC_MATHS_2026";
+            const quizId = urlParams.get('id') || "CIVICS_CLASS8_T2";
             document.getElementById('display-subject').innerText = quizId.replace(/_/g, ' ');
 
             const distSelect = document.getElementById('userDistrict');
             tnDistricts.forEach(d => distSelect.add(new Option(d, d)));
         });
 
-      async function startQuiz() {
-    const name = document.getElementById('userName').value.trim();
-    const mobile = document.getElementById('userMobile').value.trim();
-    const dist = document.getElementById('userDistrict').value;
+        async function startQuiz() {
+            const name = document.getElementById('userName').value.trim();
+            const mobile = document.getElementById('userMobile').value.trim();
+            const dist = document.getElementById('userDistrict').value;
+            if(!name || mobile.length !== 10 || !dist) return alert("Details invalid.");
 
-    if(!name || mobile.length !== 10 || !dist) return alert("Details invalid.");
+            document.getElementById('display-subject').innerText = "CONNECTING...";
 
-    try {
-        const qId = new URLSearchParams(window.location.search).get('id') || "SSLC_MATHS_2026";
-        const qSnap = await window.getDocs(window.query(window.collection(window.db, "quizzes", qId, "questions"), window.orderBy("qno")));
-        questions = qSnap.docs.map(doc => doc.data());
+            const qId = new URLSearchParams(window.location.search).get('id') || "CIVICS_CLASS8_T2";
+            let attempts = 0;
+            let success = false;
 
-        if (questions.length === 0) return alert("Quiz not found.");
-
-        // Save login session
-        localStorage.setItem('tnSession', JSON.stringify({name, mobile, dist, qId}));
-
-        // CHECK FOR SAVED ANSWERS (RESTORE PROGRESS)
-        const savedAnswers = localStorage.getItem('tnAnswers');
-        if (savedAnswers) {
-            const restored = JSON.parse(savedAnswers);
-            // Only restore if the number of questions matches
-            if (restored.length === questions.length) {
-                answers = restored;
-            } else {
-                answers = new Array(questions.length).fill(null);
+            // Retries polling strategy to prevent cloud sleep disconnect loops
+            while (attempts < 3 && !success) {
+                try {
+                    attempts++;
+                    const qSnap = await window.getDocs(window.query(window.collection(window.db, "quizzes", qId, "questions"), window.orderBy("qno")));
+                    questions = qSnap.docs.map(doc => doc.data());
+                    if (questions.length > 0) success = true;
+                    else await new Promise(r => setTimeout(r, 1500));
+                } catch (e) {
+                    await new Promise(r => setTimeout(r, 1500));
+                }
             }
-        } else {
-            answers = new Array(questions.length).fill(null);
+
+            document.getElementById('display-subject').innerText = qId.replace(/_/g, ' ');
+
+            if (!success || questions.length === 0) {
+                return alert("QUIZ NOT FOUND:\nCheck that your link parameters match your Sheet tab casing perfectly.");
+            }
+
+            localStorage.setItem('tnSession', JSON.stringify({name, mobile, dist, qId}));
+            const savedAnswers = localStorage.getItem('tnAnswers');
+            answers = savedAnswers && JSON.parse(savedAnswers).length === questions.length ? JSON.parse(savedAnswers) : new Array(questions.length).fill(null);
+            skipped = new Array(questions.length).fill(false);
+
+            document.getElementById('section-reg').classList.add('hidden');
+            document.getElementById('section-quiz').classList.remove('hidden');
+            showQuestion();
         }
 
-        skipped = new Array(questions.length).fill(false);
-        document.getElementById('section-reg').classList.add('hidden');
-        document.getElementById('section-quiz').classList.remove('hidden');
-        showQuestion();
-    } catch (e) { alert("Load Error."); }
-}
         function showQuestion() {
             const q = questions[currentIdx];
             document.getElementById('q-text').innerHTML = renderSafeText(q.question);
@@ -270,21 +275,18 @@
                     <span class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-[#1e3a8a] text-white rounded-full text-[10px] font-black mr-4">${labels[i]}</span>
                     <div class="flex-grow font-bold text-gray-700">${renderSafeText(opt)}</div>
                 `;
-               btn.onclick = () => {
-    answers[currentIdx] = i;
-    skipped[currentIdx] = false;
-
-    // NEW: Save the answers to the phone's memory immediately
-    localStorage.setItem('tnAnswers', JSON.stringify(answers));
-
-    showQuestion();
-};
+                btn.onclick = () => {
+                    answers[currentIdx] = i;
+                    skipped[currentIdx] = false;
+                    localStorage.setItem('tnAnswers', JSON.stringify(answers));
+                    showQuestion();
+                };
                 list.appendChild(btn);
             });
             document.getElementById('btn-main').innerText = (currentIdx === questions.length - 1) ? "Preview" : "Next";
             updatePalette();
             if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise([document.getElementById('section-quiz')]);
+                window.MathJax.typesetPromise([document.getElementById('q-text')]);
             }
         }
 
@@ -327,7 +329,7 @@
             questions.forEach((q, i) => {
                 const isAns = answers[i] !== null; if(!isAns) allAnswered = false;
                 const div = document.createElement('div');
-                div.className = "p-4 bg-white rounded-xl border flex justify-between items-center";
+                div.className = "p-4 bg-white rounded-xl border flex justify-between items-center shadow-sm";
                 div.innerHTML = `<div class="flex items-center gap-3"><span class="w-8 h-8 bg-slate-100 flex items-center justify-center rounded-lg font-black text-xs">${i+1}</span><span class="text-sm font-bold ${isAns ? 'text-green-600' : 'text-red-500'}">${isAns ? 'DONE' : 'SKIPPED'}</span></div><button onclick="backToSpecificQ(${i})" class="text-[10px] font-black text-blue-500 bg-blue-50 px-3 py-1 rounded-full">Edit</button>`;
                 summary.appendChild(div);
             });
@@ -341,107 +343,97 @@
         function backToSpecificQ(idx) { currentIdx = idx; backToQuiz(); showQuestion(); }
         function goToFeedback() { document.getElementById('section-preview').classList.add('hidden'); document.getElementById('section-feedback').classList.remove('hidden'); }
 
-       async function finalSubmitDirect() {
-    const btn = document.getElementById('final-confirm-btn');
-    btn.disabled = true;
-    btn.innerText = "SUBMITTING...";
+        async function finalSubmitDirect() {
+            const btn = document.getElementById('final-confirm-btn');
+            btn.disabled = true;
+            btn.innerText = "SUBMITTING...";
 
-    const name = document.getElementById('userName').value;
-    const mobile = document.getElementById('userMobile').value;
-    const dist = document.getElementById('userDistrict').value;
-    const quizId = new URLSearchParams(window.location.search).get('id') || "QUIZ";
-    const subjectTitle = quizId.replace(/_/g, ' ');
+            const session = JSON.parse(localStorage.getItem('tnSession'));
+            const qId = new URLSearchParams(window.location.search).get('id') || "CIVICS_CLASS8_T2";
+            const subjectTitle = qId.replace(/_/g, ' ');
 
-    // Update PDF view with student details
-    document.getElementById('user-details-pdf').innerHTML = `
-        <div style="margin-bottom: 8px;">
-            <p style="font-size: 14px; color: #1e3a8a; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid #ddd; padding-bottom: 4px;">Subject: ${subjectTitle}</p>
-        </div>
-        <p>Name: ${name} | Mobile: ${mobile}</p>
-        <p>District: ${dist} | Date: ${new Date().toLocaleDateString()}</p>
-    `;
+            document.getElementById('user-details-pdf').innerHTML = `
+                <div style="margin-bottom: 8px;">
+                    <p style="font-size: 14px; color: #1e3a8a; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid #ddd; padding-bottom: 4px;">Subject: ${subjectTitle}</p>
+                </div>
+                <p>Name: ${session.name} | Mobile: ${session.mobile}</p>
+                <p>District: ${session.dist} | Date: ${new Date().toLocaleDateString()}</p>
+            `;
 
-    let score = 0;
-    const correction = document.getElementById('correction-list');
-    correction.innerHTML = '';
+            let score = 0;
+            const correction = document.getElementById('correction-list');
+            correction.innerHTML = '';
 
-    // Generate the correction cards
-    answers.forEach((ans, i) => {
-        const correctIdx = parseInt(questions[i].correctIndex);
-        const isCorrect = (ans === correctIdx);
-        if(isCorrect) score++;
+            answers.forEach((ans, i) => {
+                const correctIdx = parseInt(questions[i].correctIndex);
+                const isCorrect = (ans === correctIdx);
+                if(isCorrect) score++;
 
-        const card = document.createElement('div');
-        card.className = `correction-card p-6 rounded-2xl border-l-8 mb-6 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-50 bg-red-50'}`;
+                const card = document.createElement('div');
+                card.className = `correction-card p-6 rounded-2xl border-l-8 mb-6 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-50 bg-red-50'}`;
 
-        let optionsHtml = '<div class="mt-3 space-y-2">';
-        questions[i].options.forEach((opt, optIdx) => {
-            const label = ['A', 'B', 'C', 'D'][optIdx];
-            let statusBadge = '';
-            let borderClass = 'border-gray-200 bg-white';
+                let optionsHtml = '<div class="mt-3 space-y-2">';
+                questions[i].options.forEach((opt, optIdx) => {
+                    const label = ['A', 'B', 'C', 'D'][optIdx];
+                    let statusBadge = '';
+                    let borderClass = 'border-gray-200 bg-white';
 
-            if (optIdx === correctIdx) {
-                statusBadge = '<span class="ml-auto text-[9px] font-black text-green-600 bg-green-100 px-2 py-0.5 rounded uppercase">Correct</span>';
-                borderClass = 'border-green-400 bg-green-50 ring-1 ring-green-400';
-            } else if (optIdx === ans && !isCorrect) {
-                statusBadge = '<span class="ml-auto text-[9px] font-black text-red-600 bg-red-100 px-2 py-0.5 rounded uppercase">Your Choice</span>';
-                borderClass = 'border-red-400 bg-red-50';
+                    if (optIdx === correctIdx) {
+                        statusBadge = '<span class="ml-auto text-[9px] font-black text-green-600 bg-green-100 px-2 py-0.5 rounded uppercase">Correct</span>';
+                        borderClass = 'border-green-400 bg-green-50 ring-1 ring-green-400';
+                    } else if (optIdx === ans && !isCorrect) {
+                        statusBadge = '<span class="ml-auto text-[9px] font-black text-red-600 bg-red-100 px-2 py-0.5 rounded uppercase">Your Choice</span>';
+                        borderClass = 'border-red-400 bg-red-50';
+                    }
+                    optionsHtml += `<div class="flex items-center p-2 text-xs border rounded-lg ${borderClass}"><span class="w-5 h-5 flex items-center justify-center bg-slate-800 text-white rounded-full text-[8px] font-bold mr-2">${label}</span><span class="font-medium text-slate-700">${renderSafeText(opt)}</span>${statusBadge}</div>`;
+                });
+                optionsHtml += '</div>';
+
+                card.innerHTML = `<div class="flex justify-between items-start"><p class="text-[10px] font-black uppercase tracking-widest ${isCorrect ? 'text-green-600' : 'text-red-600'} mb-1">Question ${i+1}</p><span class="text-[10px] font-bold px-2 py-0.5 rounded ${isCorrect ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}">${isCorrect ? 'CORRECT' : 'WRONG'}</span></div><p class="font-bold text-slate-800 leading-snug">${renderSafeText(questions[i].question)}</p>${optionsHtml}`;
+                correction.appendChild(card);
+            });
+
+            try {
+                const feedbackVal = document.getElementById('feedbackText') ? document.getElementById('feedbackText').value : "";
+
+                await window.addDoc(window.collection(window.db, "results"), {
+                    name: session.name,
+                    mobile: session.mobile,
+                    dist: session.dist,
+                    feedback: feedbackVal,
+                    score,
+                    total: questions.length,
+                    timestamp: new Date(),
+                    quizId: qId
+                });
+
+                localStorage.removeItem('tnAnswers');
+                localStorage.removeItem('tnSession');
+
+                document.getElementById('display-score').innerText = `${score}/${questions.length}`;
+                document.getElementById('section-feedback').classList.add('hidden');
+                document.getElementById('section-success').classList.remove('hidden');
+
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    window.MathJax.typesetPromise([document.getElementById('correction-list')]);
+                }
+                window.scrollTo(0,0);
+            } catch (e) {
+                alert("Error submitting results.");
+                btn.disabled = false;
+                btn.innerText = "Confirm Submit";
             }
-            optionsHtml += `<div class="flex items-center p-2 text-xs border rounded-lg ${borderClass}"><span class="w-5 h-5 flex items-center justify-center bg-slate-800 text-white rounded-full text-[8px] font-bold mr-2">${label}</span><span class="font-medium text-slate-700">${renderSafeText(opt)}</span>${statusBadge}</div>`;
-        });
-        optionsHtml += '</div>';
-
-        card.innerHTML = `<div class="flex justify-between items-start"><p class="text-[10px] font-black uppercase tracking-widest ${isCorrect ? 'text-green-600' : 'text-red-600'} mb-1">Question ${i+1}</p><span class="text-[10px] font-bold px-2 py-0.5 rounded ${isCorrect ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}">${isCorrect ? 'CORRECT' : 'WRONG'}</span></div><p class="font-bold text-slate-800 leading-snug">${renderSafeText(questions[i].question)}</p>${optionsHtml}`;
-        correction.appendChild(card);
-    });
-
-    try {
-        const feedbackVal = document.getElementById('feedbackText') ? document.getElementById('feedbackText').value : "";
-
-        // Upload result to Firestore
-        await window.addDoc(window.collection(window.db, "results"), {
-            name,
-            mobile,
-            dist,
-            feedback: feedbackVal,
-            score,
-            total: questions.length,
-            timestamp: new Date(),
-            quizId: quizId
-        });
-
-        // --- NEW: CLEAR SESSION DATA ---
-        // This ensures the phone memory is wiped so the next student starts fresh
-        localStorage.removeItem('tnAnswers');
-        localStorage.removeItem('tnClassroomSession');
-        // -------------------------------
-
-        document.getElementById('display-score').innerText = `${score}/${questions.length}`;
-        document.getElementById('section-feedback').classList.add('hidden');
-        document.getElementById('section-success').classList.remove('hidden');
-
-        if (window.MathJax && window.MathJax.typesetPromise) {
-            window.MathJax.typesetPromise([document.getElementById('correction-list')]);
         }
-        window.scrollTo(0,0);
-    } catch (e) {
-        console.error("Submission error: ", e);
-        alert("Error submitting results. Please check your connection.");
-        btn.disabled = false;
-        btn.innerText = "Confirm Submit";
-    }
-}
 
         window.downloadCorrectionPDF = function() {
             const el = document.getElementById('pdf-content');
             const h = document.getElementById('pdf-header-brand');
             const f = document.getElementById('pdf-footer-brand');
             const w = document.getElementById('pdf-watermark-main');
-            const quizId = new URLSearchParams(window.location.search).get('id') || "QUIZ";
-            const userName = document.getElementById('userName').value || "Student";
+            const session = JSON.parse(localStorage.getItem('tnSession')) || { qId: "QUIZ", name: "Student" };
 
             h.style.display = 'block'; f.style.display = 'block'; w.style.display = 'block';
-            const opt = { margin: [10, 5, 10, 5], filename: `${quizId}_${userName}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: 'legacy' } };
+            const opt = { margin: [10, 5, 10, 5], filename: `${session.qId}_${session.name}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: 'legacy' } };
             html2pdf().set(opt).from(el).save().then(() => { h.style.display = 'none'; f.style.display = 'none'; w.style.display = 'none'; });
         };
     </script>
