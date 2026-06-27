@@ -78,6 +78,30 @@
             line-height: 1.6;
             word-wrap: break-word;
         }
+
+        /* DYNAMIC EXPORT COMPRESSION OVERRIDES */
+        .pdf-compact-mode #correction-list {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 10px !important;
+        }
+        .pdf-compact-mode .correction-card {
+            padding: 10px !important;
+            margin-bottom: 0px !important;
+            border-radius: 8px !important;
+            font-size: 11px !important;
+        }
+        .pdf-compact-mode .correction-card p {
+            font-size: 11px !important;
+            line-height: 1.3 !important;
+        }
+        .pdf-compact-mode .correction-card .mt-3 {
+            margin-top: 4px !important;
+            gap: 4px !important;
+        }
+        .pdf-compact-mode .correction-card border rounded-lg {
+            padding: 3px !important;
+        }
     </style>
 </head>
 <body class="antialiased min-h-screen">
@@ -86,6 +110,7 @@
         <span id="display-subject" class="text-[#1e3a8a] font-black text-[10px] tracking-widest uppercase">LOADING...</span>
     </div>
 
+    <!-- REGISTRATION MODULE -->
     <div id="section-reg" class="flex items-center justify-center min-h-[85vh] p-4">
         <div class="w-full max-w-md bg-white rounded-[2.5rem] p-8 shadow-2xl border-t-8 border-[#1e3a8a]">
             <h2 class="text-2xl font-black text-[#1e3a8a] text-center mb-6 uppercase">Login</h2>
@@ -100,6 +125,7 @@
         </div>
     </div>
 
+    <!-- MAIN EXAM TRACK LAYER -->
     <div id="section-quiz" class="hidden min-h-screen p-4 pb-48 bg-white">
         <div class="max-w-4xl mx-auto grid grid-cols-4 gap-2 mb-6 text-slate-600">
             <div class="stat-card"><p class="text-[9px] font-bold uppercase">Total</p><p id="stat-total" class="font-black">0</p></div>
@@ -130,6 +156,7 @@
         </div>
     </div>
 
+    <!-- PREVIEW ACCORDION -->
     <div id="section-preview" class="hidden min-h-screen p-4 bg-gray-50 pb-32">
         <div class="max-w-2xl mx-auto">
             <h2 class="text-2xl font-black text-[#1e3a8a] mb-6 uppercase text-center">Review Answers</h2>
@@ -141,6 +168,7 @@
         </div>
     </div>
 
+    <!-- FEEDBACK DISPATCH LAYER -->
     <div id="section-feedback" class="hidden flex items-center justify-center min-h-[90vh] p-4">
         <div class="w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-2xl text-center">
             <h2 class="text-2xl font-black text-gray-800 mb-6 uppercase">Feedback</h2>
@@ -149,6 +177,7 @@
         </div>
     </div>
 
+    <!-- COMPLETE PERFORMANCE SCORECARD AND SHEET CONTROLLER -->
     <div id="section-success" class="hidden min-h-screen p-4 bg-white">
         <div class="max-w-3xl mx-auto py-10">
             <div id="pdf-content" class="p-4 bg-white">
@@ -431,18 +460,20 @@
             const quizId = new URLSearchParams(window.location.search).get('id') || "QUIZ";
             
             dBtn.disabled = true;
-            dBtn.innerText = "GENERATING PDF REPORT...";
+            dBtn.innerText = "COMPRESSING & GENERATING REPORT...";
+
+            // Apply high-density multi-column styling class to save height
+            document.body.classList.add('pdf-compact-mode');
 
             h.style.display = 'block'; f.style.display = 'block'; w.style.display = 'block';
             
             const processPDF = () => {
-                // OPTIMIZATION: Bypasses the 16K mobile device image element drawing restriction limits entirely 
                 const opt = { 
-                    margin: [10, 5, 10, 5], 
+                    margin: [8, 4, 8, 4], // Reduced margins
                     filename: `${quizId}_Correction_Sheet.pdf`, 
-                    image: { type: 'jpeg', quality: 0.98 }, 
+                    image: { type: 'jpeg', quality: 0.95 }, 
                     html2canvas: { 
-                        scale: 1.5, // Reduced scale slightly to safely stay inside memory ceilings on 150+ questions
+                        scale: 1.2, // Balanced down further to completely safeguard memory space
                         useCORS: true, 
                         scrollY: 0, 
                         logging: false,
@@ -453,6 +484,8 @@
                 };
                 
                 html2pdf().set(opt).from(el).save().then(() => { 
+                    // Cleanup compression styles out of UI screen after successful write
+                    document.body.classList.remove('pdf-compact-mode');
                     h.style.display = 'none'; f.style.display = 'none'; w.style.display = 'none'; 
                     dBtn.disabled = false;
                     dBtn.innerText = "📊 DOWNLOAD CORRECTION PDF";
@@ -460,7 +493,7 @@
                     localStorage.removeItem('tnAnswers');
                     localStorage.removeItem('tnSession');
                 }).catch(err => {
-                    console.error("PDF engine crash context: ", err);
+                    document.body.classList.remove('pdf-compact-mode');
                     h.style.display = 'none'; f.style.display = 'none'; w.style.display = 'none';
                     dBtn.disabled = false;
                     dBtn.innerText = "📊 DOWNLOAD CORRECTION PDF";
@@ -469,7 +502,7 @@
 
             if (window.MathJax && window.MathJax.typesetPromise) {
                 window.MathJax.typesetPromise([el]).then(() => {
-                    setTimeout(processPDF, 800); // Increased renderer buffer wait slightly for 150 questions
+                    setTimeout(processPDF, 1000); // 1 second safety allocation for massive datasets
                 });
             } else {
                 processPDF();
