@@ -168,7 +168,7 @@
                 </div>
             </div>
             <div class="flex flex-col gap-3">
-                <button onclick="downloadCorrectionPDF()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-black shadow-lg">📊 DOWNLOAD CORRECTION PDF</button>
+                <button id="downloadBtn" onclick="downloadCorrectionPDF()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-black shadow-lg">📊 DOWNLOAD CORRECTION PDF</button>
                 <button onclick="location.reload()" class="w-full bg-gray-900 text-white p-5 rounded-2xl font-black shadow-xl">CLOSE SESSION</button>
             </div>
         </div>
@@ -426,29 +426,49 @@
             const h = document.getElementById('pdf-header-brand');
             const f = document.getElementById('pdf-footer-brand');
             const w = document.getElementById('pdf-watermark-main');
+            const dBtn = document.getElementById('downloadBtn');
             
-            // Fix: Pull from state memory safely instead of parsing cleared localStorage contexts
-            const scoreText = document.getElementById('display-score').innerText;
             const quizId = new URLSearchParams(window.location.search).get('id') || "QUIZ";
+            
+            dBtn.disabled = true;
+            dBtn.innerText = "GENERATING PDF REPORT...";
 
             h.style.display = 'block'; f.style.display = 'block'; w.style.display = 'block';
             
-            const opt = { 
-                margin: [10, 5, 10, 5], 
-                filename: `${quizId}_Correction_Sheet.pdf`, 
-                image: { type: 'jpeg', quality: 0.98 }, 
-                html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, 
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, 
-                pagebreak: { mode: 'legacy' } 
-            };
-            
-            html2pdf().set(opt).from(el).save().then(() => { 
-                h.style.display = 'none'; f.style.display = 'none'; w.style.display = 'none'; 
+            // Core Asynchronous Sync Guardrail logic wrapper
+            const processPDF = () => {
+                const opt = { 
+                    margin: [10, 5, 10, 5], 
+                    filename: `${quizId}_Correction_Sheet.pdf`, 
+                    image: { type: 'jpeg', quality: 0.98 }, 
+                    html2canvas: { scale: 2, useCORS: true, scrollY: 0, logging: false }, 
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, 
+                    pagebreak: { mode: 'legacy' } 
+                };
                 
-                // Clear temporary student progress entries out of disk storage safely *after* download completion
-                localStorage.removeItem('tnAnswers');
-                localStorage.removeItem('tnSession');
-            });
+                html2pdf().set(opt).from(el).save().then(() => { 
+                    h.style.display = 'none'; f.style.display = 'none'; w.style.display = 'none'; 
+                    dBtn.disabled = false;
+                    dBtn.innerText = "📊 DOWNLOAD CORRECTION PDF";
+                    
+                    localStorage.removeItem('tnAnswers');
+                    localStorage.removeItem('tnSession');
+                }).catch(err => {
+                    console.error("PDF engine crash context: ", err);
+                    h.style.display = 'none'; f.style.display = 'none'; w.style.display = 'none';
+                    dBtn.disabled = false;
+                    dBtn.innerText = "📊 DOWNLOAD CORRECTION PDF";
+                });
+            };
+
+            // Force html2pdf to wait until MathJax settles its DOM modifications completely
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise([el]).then(() => {
+                    setTimeout(processPDF, 500); // 500ms brief rendering buffer timeout safety lock
+                });
+            } else {
+                processPDF();
+            }
         };
     </script>
 </body>
