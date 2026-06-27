@@ -43,7 +43,7 @@
 
         .quiz-footer { text-align: center; padding: 10px; font-size: 10px; font-weight: 900; letter-spacing: 2px; color: #1e3a8a; opacity: 0.5; text-transform: uppercase; }
 
-        #pdf-content { background: white !important; }
+        #pdf-content { background: white !important; display: block; width: 100%; }
         #pdf-header-brand, #pdf-footer-brand { display: none; }
 
         #pdf-header-brand, #display-score, #user-details-pdf {
@@ -284,7 +284,6 @@
             document.getElementById('btn-main').innerText = (currentIdx === questions.length - 1) ? "Preview" : "Next";
             updatePalette();
             
-            // FIX: Extended compilation sweep to parse LaTeX targets inside both questions and input buttons
             if (window.MathJax && window.MathJax.typesetPromise) {
                 window.MathJax.typesetPromise([document.getElementById('section-quiz')]);
             }
@@ -407,9 +406,6 @@
                     quizId: qId
                 });
 
-                localStorage.removeItem('tnAnswers');
-                localStorage.removeItem('tnSession');
-
                 document.getElementById('display-score').innerText = `${score}/${questions.length}`;
                 document.getElementById('section-feedback').classList.add('hidden');
                 document.getElementById('section-success').classList.remove('hidden');
@@ -430,11 +426,29 @@
             const h = document.getElementById('pdf-header-brand');
             const f = document.getElementById('pdf-footer-brand');
             const w = document.getElementById('pdf-watermark-main');
-            const session = JSON.parse(localStorage.getItem('tnSession')) || { qId: "QUIZ", name: "Student" };
+            
+            // Fix: Pull from state memory safely instead of parsing cleared localStorage contexts
+            const scoreText = document.getElementById('display-score').innerText;
+            const quizId = new URLSearchParams(window.location.search).get('id') || "QUIZ";
 
             h.style.display = 'block'; f.style.display = 'block'; w.style.display = 'block';
-            const opt = { margin: [10, 5, 10, 5], filename: `${session.qId}_${session.name}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: 'legacy' } };
-            html2pdf().set(opt).from(el).save().then(() => { h.style.display = 'none'; f.style.display = 'none'; w.style.display = 'none'; });
+            
+            const opt = { 
+                margin: [10, 5, 10, 5], 
+                filename: `${quizId}_Correction_Sheet.pdf`, 
+                image: { type: 'jpeg', quality: 0.98 }, 
+                html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, 
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, 
+                pagebreak: { mode: 'legacy' } 
+            };
+            
+            html2pdf().set(opt).from(el).save().then(() => { 
+                h.style.display = 'none'; f.style.display = 'none'; w.style.display = 'none'; 
+                
+                // Clear temporary student progress entries out of disk storage safely *after* download completion
+                localStorage.removeItem('tnAnswers');
+                localStorage.removeItem('tnSession');
+            });
         };
     </script>
 </body>
