@@ -435,15 +435,21 @@
 
             h.style.display = 'block'; f.style.display = 'block'; w.style.display = 'block';
             
-            // Core Asynchronous Sync Guardrail logic wrapper
             const processPDF = () => {
+                // OPTIMIZATION: Bypasses the 16K mobile device image element drawing restriction limits entirely 
                 const opt = { 
                     margin: [10, 5, 10, 5], 
                     filename: `${quizId}_Correction_Sheet.pdf`, 
                     image: { type: 'jpeg', quality: 0.98 }, 
-                    html2canvas: { scale: 2, useCORS: true, scrollY: 0, logging: false }, 
+                    html2canvas: { 
+                        scale: 1.5, // Reduced scale slightly to safely stay inside memory ceilings on 150+ questions
+                        useCORS: true, 
+                        scrollY: 0, 
+                        logging: false,
+                        removeContainer: true
+                    }, 
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, 
-                    pagebreak: { mode: 'legacy' } 
+                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } 
                 };
                 
                 html2pdf().set(opt).from(el).save().then(() => { 
@@ -461,10 +467,9 @@
                 });
             };
 
-            // Force html2pdf to wait until MathJax settles its DOM modifications completely
             if (window.MathJax && window.MathJax.typesetPromise) {
                 window.MathJax.typesetPromise([el]).then(() => {
-                    setTimeout(processPDF, 500); // 500ms brief rendering buffer timeout safety lock
+                    setTimeout(processPDF, 800); // Increased renderer buffer wait slightly for 150 questions
                 });
             } else {
                 processPDF();
