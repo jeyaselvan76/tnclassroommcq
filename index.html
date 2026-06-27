@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TNSED MCQ Portal | WWW.TNCLASSROOM.COM</title>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
@@ -284,8 +283,10 @@
             });
             document.getElementById('btn-main').innerText = (currentIdx === questions.length - 1) ? "Preview" : "Next";
             updatePalette();
+            
+            // FIX: Extended compilation sweep to parse LaTeX targets inside both questions and input buttons
             if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise([document.getElementById('q-text')]);
+                window.MathJax.typesetPromise([document.getElementById('section-quiz')]);
             }
         }
 
