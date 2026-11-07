@@ -110,16 +110,21 @@
         <span id="display-subject" class="text-[#1e3a8a] font-black text-[10px] tracking-widest uppercase">LOADING...</span>
     </div>
 
+    <!-- ONE-TAP GOOGLE AUTH SCREEN (BYPASSES MANUAL FORM) -->
     <div id="section-reg" class="flex items-center justify-center min-h-[85vh] p-4">
-        <div class="w-full max-w-md bg-white rounded-[2.5rem] p-8 shadow-2xl border-t-8 border-[#1e3a8a]">
-            <h2 class="text-2xl font-black text-[#1e3a8a] text-center mb-6 uppercase">Login</h2>
-            <div class="space-y-4">
-                <input type="text" id="userName" class="w-full p-4 bg-gray-50 border-0 rounded-2xl outline-none border border-gray-100 font-bold" placeholder="Student Name">
-                <input type="tel" id="userMobile" maxlength="10" class="w-full p-4 bg-gray-50 border-0 rounded-2xl outline-none border border-gray-100 font-mono font-bold" placeholder="Mobile Number">
-                <select id="userDistrict" class="w-full p-4 bg-gray-50 border-0 rounded-2xl outline-none appearance-none border border-gray-100 font-bold">
-                    <option value="">Select District</option>
-                </select>
-                <button onclick="startQuiz()" class="w-full bg-[#1e3a8a] text-white py-4 rounded-2xl font-black shadow-lg uppercase tracking-wider block text-sm">START ASSESSMENT</button>
+        <div class="w-full max-w-md bg-white rounded-[2.5rem] p-8 shadow-2xl border-t-8 border-[#1e3a8a] text-center">
+            <h2 class="text-2xl font-black text-[#1e3a8a] mb-2 uppercase">TNTET Assessment</h2>
+            <p id="auth-status-msg" class="text-xs font-bold text-gray-500 mb-6">Verifying registration status...</p>
+
+            <div id="login-actions" class="hidden space-y-4">
+                <button onclick="handleGoogleSignIn()" class="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-200 text-gray-700 py-4 rounded-2xl font-black shadow-md hover:bg-gray-50 transition">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5" alt="Google">
+                    <span>SIGN IN WITH GOOGLE</span>
+                </button>
+            </div>
+
+            <div id="registration-alert" class="hidden mt-4 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold">
+                Registration not active. Please register to access TNTET quizzes.
             </div>
         </div>
     </div>
@@ -198,9 +203,15 @@
         </div>
     </div>
 
-    <!-- FIREBASE INTEGRATION: Hybrid Mode (New Single-Doc 1-Read + Old Subcollection Fallback) -->
+    <!-- FIREBASE MODULE INTEGRATION -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import {
+            getAuth,
+            GoogleAuthProvider,
+            signInWithPopup,
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import {
             getFirestore,
             doc,
@@ -223,7 +234,13 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getFirestore(app);
+
+        window.auth = auth;
+        window.GoogleAuthProvider = GoogleAuthProvider;
+        window.signInWithPopup = signInWithPopup;
+        window.onAuthStateChanged = onAuthStateChanged;
 
         window.db = db;
         window.doc = doc;
@@ -236,8 +253,11 @@
     </script>
 
     <script>
-        const tnDistricts = ["Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kancheepuram", "Kanniyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivagangai", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"];
-        let questions = []; let currentIdx = 0; let answers = []; let skipped = [];
+        let questions = [];
+        let currentIdx = 0;
+        let answers = [];
+        let skipped = [];
+        let authenticatedUser = null;
 
         function renderSafeText(text) {
             if (!text) return "";
@@ -250,21 +270,55 @@
             const quizId = urlParams.get('id') || "CIVICS_CLASS8_T2";
             document.getElementById('display-subject').innerText = quizId.replace(/_/g, ' ');
 
-            const distSelect = document.getElementById('userDistrict');
-            tnDistricts.forEach(d => distSelect.add(new Option(d, d)));
+            // Monitor Firebase Auth State
+            window.onAuthStateChanged(window.auth, async (user) => {
+                if (user) {
+                    authenticatedUser = user;
+                    document.getElementById('login-actions').classList.add('hidden');
+                    document.getElementById('registration-alert').classList.add('hidden');
+                    document.getElementById('auth-status-msg').innerText = `Welcome, ${user.displayName || "Candidate"}! Loading assessment...`;
+
+                    await initSubscriberQuiz(user);
+                } else {
+                    authenticatedUser = null;
+                    document.getElementById('auth-status-msg').innerText = "Please sign in with your registered Gmail account.";
+                    document.getElementById('login-actions').classList.remove('hidden');
+                }
+            });
         });
 
-        async function startQuiz() {
-            const name = document.getElementById('userName').value.trim();
-            const mobile = document.getElementById('userMobile').value.trim();
-            const dist = document.getElementById('userDistrict').value;
-            if(!name || mobile.length !== 10 || !dist) return alert("Details invalid.");
+        async function handleGoogleSignIn() {
+            const provider = new window.GoogleAuthProvider();
+            try {
+                await window.signInWithPopup(window.auth, provider);
+            } catch (err) {
+                alert("Google Sign-In failed: " + err.message);
+            }
+        }
 
-            document.getElementById('display-subject').innerText = "CONNECTING...";
-
+        async function initSubscriberQuiz(user) {
             const qId = new URLSearchParams(window.location.search).get('id') || "CIVICS_CLASS8_T2";
 
-            // Local cache check to reduce reads to 0 on reload
+            // Optional: Verify User Profile / Registration Record
+            try {
+                const userDocRef = window.doc(window.db, "users", user.uid);
+                const userDocSnap = await window.getDoc(userDocRef);
+
+                // If user record exists and explicitly flagged unpaid, display warning
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+                    if (userData.isPaid === false) {
+                        document.getElementById('auth-status-msg').innerText = "Access Restricted";
+                        document.getElementById('registration-alert').innerText = "Registration not active. Please register to access TNTET quizzes.";
+                        document.getElementById('registration-alert').classList.remove('hidden');
+                        return;
+                    }
+                }
+            } catch (authCheckErr) {
+                console.warn("User verification query bypassed:", authCheckErr);
+            }
+
+            // Local cache check to reduce reads to 0 on page reload
             const cacheKey = `quiz_cache_${qId}`;
             const cachedData = sessionStorage.getItem(cacheKey);
 
@@ -278,7 +332,7 @@
                     try {
                         attempts++;
 
-                        // 1. Try New Model First (Single Document Array - 1 Read)
+                        // 1. Try New Single-Document Model (1 Read)
                         const docRef = window.doc(window.db, "quizzes", qId);
                         const docSnap = await window.getDoc(docRef);
 
@@ -289,7 +343,7 @@
                             break;
                         }
 
-                        // 2. Fallback to Old Model (Subcollection) if parent doc doesn't have questions array
+                        // 2. Fallback to Old Subcollection Model
                         const subColQuery = window.query(
                             window.collection(window.db, "quizzes", qId, "questions"),
                             window.orderBy("qno")
@@ -317,13 +371,16 @@
                 return alert("QUIZ NOT FOUND:\nCheck that your link parameters match your Sheet tab casing perfectly.");
             }
 
-            // --- MULTI-USER SESSION RESUME SYSTEM ---
+            const candidateName = user.displayName || "Registered Candidate";
+            const candidateEmail = user.email || "";
+
+            // Session Persistence
             const previousSession = localStorage.getItem('tnSession');
             let shouldRestore = false;
 
             if (previousSession) {
                 const parsedSession = JSON.parse(previousSession);
-                if (parsedSession.name === name && parsedSession.mobile === mobile && parsedSession.qId === qId) {
+                if (parsedSession.email === candidateEmail && parsedSession.qId === qId) {
                     shouldRestore = true;
                 }
             }
@@ -335,11 +392,17 @@
                 localStorage.removeItem('tnAnswers');
                 answers = new Array(questions.length).fill(null);
             }
-            // ----------------------------------------
 
-            localStorage.setItem('tnSession', JSON.stringify({name, mobile, dist, qId}));
+            localStorage.setItem('tnSession', JSON.stringify({
+                name: candidateName,
+                email: candidateEmail,
+                uid: user.uid,
+                qId: qId
+            }));
+
             skipped = new Array(questions.length).fill(false);
 
+            // Hide Auth Section and Display Quiz
             document.getElementById('section-reg').classList.add('hidden');
             document.getElementById('section-quiz').classList.remove('hidden');
             showQuestion();
@@ -442,7 +505,7 @@
             btn.disabled = true;
             btn.innerText = "SUBMITTING...";
 
-            const session = JSON.parse(localStorage.getItem('tnSession'));
+            const session = JSON.parse(localStorage.getItem('tnSession')) || {};
             const qId = new URLSearchParams(window.location.search).get('id') || "CIVICS_CLASS8_T2";
             const subjectTitle = qId.replace(/_/g, ' ');
 
@@ -450,8 +513,8 @@
                 <div style="margin-bottom: 8px;">
                     <p style="font-size: 14px; color: #1e3a8a; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid #ddd; padding-bottom: 4px;">Subject: ${subjectTitle}</p>
                 </div>
-                <p>Name: ${session.name} | Mobile: ${session.mobile}</p>
-                <p>District: ${session.dist} | Date: ${new Date().toLocaleDateString()}</p>
+                <p>Name: ${session.name || "Candidate"} | Email: ${session.email || "Registered User"}</p>
+                <p>Registration: Verified Candidate | Date: ${new Date().toLocaleDateString()}</p>
             `;
 
             let score = 0;
@@ -491,9 +554,9 @@
                 const feedbackVal = document.getElementById('feedbackText') ? document.getElementById('feedbackText').value : "";
 
                 await window.addDoc(window.collection(window.db, "results"), {
-                    name: session.name,
-                    mobile: session.mobile,
-                    dist: session.dist,
+                    name: session.name || "Registered Candidate",
+                    email: session.email || "",
+                    uid: session.uid || "",
                     feedback: feedbackVal,
                     score,
                     total: questions.length,
