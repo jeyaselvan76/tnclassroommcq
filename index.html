@@ -198,9 +198,20 @@
         </div>
     </div>
 
+    <!-- FIREBASE INTEGRATION: Hybrid Mode (New Single-Doc 1-Read + Old Subcollection Fallback) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import {
+            getFirestore,
+            doc,
+            getDoc,
+            collection,
+            getDocs,
+            query,
+            orderBy,
+            addDoc
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
         const firebaseConfig = {
             apiKey: "AIzaSyBW92t7GWAf6vIHdJ83n7Nz7Io3y2GArVw",
             authDomain: "tnclassroom-mcq-new.firebaseapp.com",
@@ -210,9 +221,18 @@
             appId: "1:808928665241:web:5a8a9e3f4ee5b885c9a208",
             measurementId: "G-L059C061EY"
         };
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        window.db = db; window.collection = collection; window.getDocs = getDocs; window.addDoc = addDoc; window.query = query; window.orderBy = orderBy;
+
+        window.db = db;
+        window.doc = doc;
+        window.getDoc = getDoc;
+        window.collection = collection;
+        window.getDocs = getDocs;
+        window.query = query;
+        window.orderBy = orderBy;
+        window.addDoc = addDoc;
     </script>
 
     <script>
@@ -243,28 +263,61 @@
             document.getElementById('display-subject').innerText = "CONNECTING...";
 
             const qId = new URLSearchParams(window.location.search).get('id') || "CIVICS_CLASS8_T2";
-            let attempts = 0;
-            let success = false;
 
-            while (attempts < 3 && !success) {
-                try {
-                    attempts++;
-                    const qSnap = await window.getDocs(window.query(window.collection(window.db, "quizzes", qId, "questions"), window.orderBy("qno")));
-                    questions = qSnap.docs.map(doc => doc.data());
-                    if (questions.length > 0) success = true;
-                    else await new Promise(r => setTimeout(r, 1500));
-                } catch (e) {
-                    await new Promise(r => setTimeout(r, 1500));
+            // Local cache check to reduce reads to 0 on reload
+            const cacheKey = `quiz_cache_${qId}`;
+            const cachedData = sessionStorage.getItem(cacheKey);
+
+            if (cachedData) {
+                questions = JSON.parse(cachedData);
+            } else {
+                let attempts = 0;
+                let success = false;
+
+                while (attempts < 3 && !success) {
+                    try {
+                        attempts++;
+
+                        // 1. Try New Model First (Single Document Array - 1 Read)
+                        const docRef = window.doc(window.db, "quizzes", qId);
+                        const docSnap = await window.getDoc(docRef);
+
+                        if (docSnap.exists() && docSnap.data().questions && docSnap.data().questions.length > 0) {
+                            questions = docSnap.data().questions;
+                            sessionStorage.setItem(cacheKey, JSON.stringify(questions));
+                            success = true;
+                            break;
+                        }
+
+                        // 2. Fallback to Old Model (Subcollection) if parent doc doesn't have questions array
+                        const subColQuery = window.query(
+                            window.collection(window.db, "quizzes", qId, "questions"),
+                            window.orderBy("qno")
+                        );
+                        const subSnap = await window.getDocs(subColQuery);
+
+                        if (!subSnap.empty) {
+                            questions = subSnap.docs.map(d => d.data());
+                            sessionStorage.setItem(cacheKey, JSON.stringify(questions));
+                            success = true;
+                            break;
+                        }
+
+                        await new Promise(r => setTimeout(r, 1200));
+                    } catch (e) {
+                        console.warn("Retrying fetch attempt...", e);
+                        await new Promise(r => setTimeout(r, 1200));
+                    }
                 }
             }
 
             document.getElementById('display-subject').innerText = qId.replace(/_/g, ' ');
 
-            if (!success || questions.length === 0) {
+            if (!questions || questions.length === 0) {
                 return alert("QUIZ NOT FOUND:\nCheck that your link parameters match your Sheet tab casing perfectly.");
             }
 
-            // --- FIXED: MULTI-USER OVERLAP SYSTEM ---
+            // --- MULTI-USER SESSION RESUME SYSTEM ---
             const previousSession = localStorage.getItem('tnSession');
             let shouldRestore = false;
 
@@ -325,7 +378,7 @@
             });
             document.getElementById('btn-main').innerText = (currentIdx === questions.length - 1) ? "Preview" : "Next";
             updatePalette();
-            
+
             if (window.MathJax && window.MathJax.typesetPromise) {
                 window.MathJax.typesetPromise([document.getElementById('section-quiz')]);
             }
@@ -469,38 +522,38 @@
             const f = document.getElementById('pdf-footer-brand');
             const w = document.getElementById('pdf-watermark-main');
             const dBtn = document.getElementById('downloadBtn');
-            
+
             const quizId = new URLSearchParams(window.location.search).get('id') || "QUIZ";
-            
+
             dBtn.disabled = true;
             dBtn.innerText = "COMPRESSING & GENERATING REPORT...";
 
             document.body.classList.add('pdf-compact-mode');
 
             h.style.display = 'block'; f.style.display = 'block'; w.style.display = 'block';
-            
+
             const processPDF = () => {
-                const opt = { 
-                    margin: [8, 4, 8, 4], 
-                    filename: `${quizId}_Correction_Sheet.pdf`, 
-                    image: { type: 'jpeg', quality: 0.95 }, 
-                    html2canvas: { 
-                        scale: 1.2, 
-                        useCORS: true, 
-                        scrollY: 0, 
+                const opt = {
+                    margin: [8, 4, 8, 4],
+                    filename: `${quizId}_Correction_Sheet.pdf`,
+                    image: { type: 'jpeg', quality: 0.95 },
+                    html2canvas: {
+                        scale: 1.2,
+                        useCORS: true,
+                        scrollY: 0,
                         logging: false,
                         removeContainer: true
-                    }, 
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, 
-                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } 
+                    },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
                 };
-                
-                html2pdf().set(opt).from(el).save().then(() => { 
+
+                html2pdf().set(opt).from(el).save().then(() => {
                     document.body.classList.remove('pdf-compact-mode');
-                    h.style.display = 'none'; f.style.display = 'none'; w.style.display = 'none'; 
+                    h.style.display = 'none'; f.style.display = 'none'; w.style.display = 'none';
                     dBtn.disabled = false;
                     dBtn.innerText = "📊 DOWNLOAD CORRECTION PDF";
-                    
+
                     localStorage.removeItem('tnAnswers');
                     localStorage.removeItem('tnSession');
                 }).catch(err => {
@@ -513,7 +566,7 @@
 
             if (window.MathJax && window.MathJax.typesetPromise) {
                 window.MathJax.typesetPromise([el]).then(() => {
-                    setTimeout(processPDF, 1000); 
+                    setTimeout(processPDF, 1000);
                 });
             } else {
                 processPDF();
