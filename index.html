@@ -123,8 +123,12 @@
                 </button>
             </div>
 
-            <div id="registration-alert" class="hidden mt-4 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold">
-                Registration not active. Please register to access TNTET quizzes.
+            <div id="registration-alert" class="hidden mt-4 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold space-y-3">
+                <p id="registration-alert-text">Registration not active. Please register to access TNTET quizzes.</p>
+                <p id="signed-in-email-hint" class="text-[11px] font-mono text-amber-700 break-all"></p>
+                <button onclick="handleSwitchAccount()" class="w-full py-2.5 px-4 bg-white border border-amber-300 rounded-xl text-[11px] font-black text-amber-900 hover:bg-amber-100 transition uppercase tracking-wider">
+                    Switch Google Account
+                </button>
             </div>
         </div>
     </div>
@@ -210,6 +214,7 @@
             getAuth,
             GoogleAuthProvider,
             signInWithPopup,
+            signOut,
             onAuthStateChanged
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import {
@@ -219,6 +224,7 @@
             collection,
             getDocs,
             query,
+            where,
             orderBy,
             addDoc
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -240,6 +246,7 @@
         window.auth = auth;
         window.GoogleAuthProvider = GoogleAuthProvider;
         window.signInWithPopup = signInWithPopup;
+        window.signOut = signOut;
         window.onAuthStateChanged = onAuthStateChanged;
 
         window.db = db;
@@ -248,11 +255,15 @@
         window.collection = collection;
         window.getDocs = getDocs;
         window.query = query;
+        window.where = where;
         window.orderBy = orderBy;
         window.addDoc = addDoc;
     </script>
 
     <script>
+        const ADMIN_SHEET_ID = "1Juvl9IbQUE8QSib6icD_8v4c36omfqCDDxn3v9Xn95Y";
+        const ADMIN_TAB_NAME = "tnc_admin";
+
         let questions = [];
         let currentIdx = 0;
         let answers = [];
@@ -276,7 +287,7 @@
                     authenticatedUser = user;
                     document.getElementById('login-actions').classList.add('hidden');
                     document.getElementById('registration-alert').classList.add('hidden');
-                    document.getElementById('auth-status-msg').innerText = `Welcome, ${user.displayName || "Candidate"}! Loading assessment...`;
+                    document.getElementById('auth-status-msg').innerText = `Welcome, ${user.displayName || "Candidate"}! Verifying access...`;
 
                     await initSubscriberQuiz(user);
                 } else {
@@ -289,6 +300,7 @@
 
         async function handleGoogleSignIn() {
             const provider = new window.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
             try {
                 await window.signInWithPopup(window.auth, provider);
             } catch (err) {
@@ -296,27 +308,100 @@
             }
         }
 
-        async function initSubscriberQuiz(user) {
-            const qId = new URLSearchParams(window.location.search).get('id') || "CIVICS_CLASS8_T2";
-
-            // Optional: Verify User Profile / Registration Record
+        async function handleSwitchAccount() {
             try {
+                await window.signOut(window.auth);
+                document.getElementById('registration-alert').classList.add('hidden');
+                await handleGoogleSignIn();
+            } catch (err) {
+                console.error("Account switch error:", err);
+            }
+        }
+
+        // Layer 3 Fallback: Check tnc_admin Google Sheet directly (Column C = Email)
+        async function verifyEmailInMasterSheet(cleanEmail) {
+            if (!cleanEmail) return false;
+            try {
+                const gvizUrl = `https://docs.google.com/spreadsheets/d/${ADMIN_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(ADMIN_TAB_NAME)}`;
+                const res = await fetch(gvizUrl, { credentials: 'omit' });
+                const text = await res.text();
+                if (!text.includes("google.visualization.Query.setResponse")) return false;
+
+                const jsonString = text.substring(text.indexOf("(") + 1, text.lastIndexOf(")"));
+                const json = JSON.parse(jsonString);
+                const rows = json.table?.rows || [];
+
+                return rows.some(r => {
+                    const cellEmail = r.c?.[2]?.v ? String(r.c[2].v).trim().toLowerCase() : "";
+                    return cellEmail === cleanEmail;
+                });
+            } catch (e) {
+                console.warn("Master sheet fallback check failed:", e);
+                return false;
+            }
+        }
+
+        // 3-Layer Pro Access Verification Pipeline
+        async function verifyProAccess(user) {
+            const cleanEmail = (user.email || "").trim().toLowerCase();
+            let hasUserDoc = false;
+            let isProUser = false;
+
+            try {
+                // Layer 1: Primary Firestore document by UID
                 const userDocRef = window.doc(window.db, "users", user.uid);
                 const userDocSnap = await window.getDoc(userDocRef);
 
-                // If user record exists and explicitly flagged unpaid, display warning
                 if (userDocSnap.exists()) {
-                    const userData = userDocSnap.data();
-                    if (userData.isPaid === false) {
-                        document.getElementById('auth-status-msg').innerText = "Access Restricted";
-                        document.getElementById('registration-alert').innerText = "Registration not active. Please register to access TNTET quizzes.";
-                        document.getElementById('registration-alert').classList.remove('hidden');
-                        return;
+                    hasUserDoc = true;
+                    const data = userDocSnap.data();
+                    const expiry = data.subscriptionExpiresAt ? data.subscriptionExpiresAt.toDate() : null;
+                    const notExpired = !expiry || expiry > new Date();
+                    if (data.isPaid === true && notExpired) {
+                        isProUser = true;
                     }
                 }
-            } catch (authCheckErr) {
-                console.warn("User verification query bypassed:", authCheckErr);
+
+                // Layer 2: Query Firestore users collection by email (catches duplicate UIDs)
+                if (!isProUser && cleanEmail) {
+                    const qEmail = window.query(window.collection(window.db, "users"), window.where("email", "==", cleanEmail));
+                    const emailSnaps = await window.getDocs(qEmail);
+                    emailSnaps.forEach(d => {
+                        hasUserDoc = true;
+                        const dData = d.data();
+                        const dExp = dData.subscriptionExpiresAt ? dData.subscriptionExpiresAt.toDate() : null;
+                        if (dData.isPaid === true && (!dExp || dExp > new Date())) {
+                            isProUser = true;
+                        }
+                    });
+                }
+            } catch (err) {
+                console.warn("Firestore user verification bypassed:", err);
             }
+
+            // Layer 3: Fallback check against tnc_admin master sheet
+            if (!isProUser && cleanEmail) {
+                isProUser = await verifyEmailInMasterSheet(cleanEmail);
+            }
+
+            // Allow access if verified Pro across any layer, OR if legacy user has no Firestore doc yet
+            return isProUser || !hasUserDoc;
+        }
+
+        async function initSubscriberQuiz(user) {
+            const qId = new URLSearchParams(window.location.search).get('id') || "CIVICS_CLASS8_T2";
+
+            // Run 3-Layer Pro Verification Pipeline
+            const isAllowed = await verifyProAccess(user);
+            if (!isAllowed) {
+                document.getElementById('auth-status-msg').innerText = "Access Restricted";
+                document.getElementById('registration-alert-text').innerText = "Registration not active. Please register to access TNTET quizzes.";
+                document.getElementById('signed-in-email-hint').innerText = `Signed in as: ${user.email || ""}`;
+                document.getElementById('registration-alert').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('auth-status-msg').innerText = `Welcome, ${user.displayName || "Candidate"}! Loading assessment...`;
 
             // Local cache check to reduce reads to 0 on page reload
             const cacheKey = `quiz_cache_${qId}`;
